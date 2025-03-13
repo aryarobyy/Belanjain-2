@@ -1,3 +1,4 @@
+import 'package:belanjain/screen/auth/auth.dart';
 import 'package:belanjain/screen/main_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
@@ -34,7 +35,7 @@ class _MyAppState extends State<MyApp> {
         title: "Belanjain",
         theme: ThemeData(),
         // home: const DashboardScreen(),
-        // home: const LoginScreen(),
-        home: const MainScreen(inputCategory: "All",));
+        home: const AuthScreen());
+        // home: const MainScreen(inputCategory: "All",));
   }
 }

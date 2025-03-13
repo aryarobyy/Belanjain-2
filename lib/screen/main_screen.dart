@@ -1,15 +1,15 @@
-import 'package:belanjain/fetchs/_product.dart';
-import 'package:belanjain/models/product_model.dart';
+import 'package:belanjain/models/product/product_model.dart';
 import 'package:belanjain/providers/product_provider.dart';
 import 'package:belanjain/screen/detail_screen.dart';
 import 'package:belanjain/screen/kamera_screen.dart';
+import 'package:belanjain/screen/products/add_product.dart';
 import 'package:flutter/material.dart';
 
 class MainScreen extends StatefulWidget {
   final String inputCategory;
   const MainScreen({
     super.key,
-    required this.inputCategory,
+    this.inputCategory = 'All',
   });
 
   @override
@@ -61,6 +61,7 @@ class _MainScreenState extends State<MainScreen> {
     }
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: _isSearching
             ? TextField(
           controller: _searchController,
@@ -103,11 +104,31 @@ class _MainScreenState extends State<MainScreen> {
             ),
         ],
       ),
-      body: _buildFiltered2(context),
+      body: Stack(
+        children: [
+          Positioned(
+            bottom: 20,
+            right: 20,
+            child: IconButton(
+              onPressed: () {
+                Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => AddProduct()));
+              },
+              icon: const Icon(
+                Icons.add,
+                size: 50,
+              ),
+              style:  ButtonStyle(
+                backgroundColor: MaterialStateProperty.all(Colors.blue),
+              ),
+            )
+          ),
+          _buildFiltered(context),
+        ],
+      ),
     );
   }
 
-  Widget _buildFiltered2(BuildContext context) {
+  Widget _buildFiltered(BuildContext context) {
     return Column(
       children: [
         SizedBox(
@@ -141,113 +162,113 @@ class _MainScreenState extends State<MainScreen> {
           ),
         ),
         const SizedBox(height: 16),
-        Expanded(
-          child: FutureBuilder<List<ProductModel>>(
-            future: ProductService().getProducts(),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              } else if (snapshot.hasError) {
-                return Center(
-                  child: Text('Error: ${snapshot.error}'),
-                );
-              } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                return const Center(
-                  child: Text('No products available.'),
-                );
-              } else {
-                final filteredProducts = snapshot.data!.where((product) {
-                  final matchesSearch = product.title.toLowerCase().contains(_searchQuery.toLowerCase());
-                  final matchesCategory = _currentCategory == 'All' || product.category == _currentCategory;
-                  return matchesSearch && matchesCategory;
-                }).toList();
-
-                if (filteredProducts.isEmpty) {
-                  return const Center(
-                    child: Text(
-                        'No products match your search or category filter.'),
-                  );
-                }
-                return GridView.builder(
-                  padding: const EdgeInsets.all(8.0),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 16,
-                    mainAxisSpacing: 16,
-                    childAspectRatio: 0.7,
-                  ),
-                  itemCount: filteredProducts.length,
-                  itemBuilder: (context, index) {
-                    final product = filteredProducts[index];
-                    return GestureDetector(
-                      onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (context) => DetailScreen(product: product),
-                          ),
-                        );
-                      },
-                      child: Card(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10.0),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Center(
-                                child: Image.network(
-                                  product.imageUrl,
-                                  height: 100,
-                                  errorBuilder: (context, error, stackTrace) => const Icon(Icons.broken_image),
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                product.title,
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const SizedBox(height: 4),
-                              Row(
-                                children: [
-                                  const Text(
-                                    "Rate:",
-                                    style: TextStyle(fontSize: 16),
-                                  ),
-                                  const SizedBox(width: 4),
-                                  const Icon(
-                                    Icons.star,
-                                    size: 16,
-                                    color: Colors.amber,
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    "${product.rating}",
-                                    style: const TextStyle(fontSize: 16),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 4),
-                              Text("Price: \$${product.price.toString()}"),
-                              const SizedBox(height: 4),
-                              Text("Status: ${product.status}"),
-                            ],
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                );
-              }
-            },
-          ),
-        ),
+        // Expanded(
+        //   child: FutureBuilder<List<ProductModel>>(
+        //     future: ProductService().getProducts(),
+        //     builder: (context, snapshot) {
+        //       if (snapshot.connectionState == ConnectionState.waiting) {
+        //         return const Center(child: CircularProgressIndicator());
+        //       } else if (snapshot.hasError) {
+        //         return Center(
+        //           child: Text('Error: ${snapshot.error}'),
+        //         );
+        //       } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+        //         return const Center(
+        //           child: Text('No products available.'),
+        //         );
+        //       } else {
+        //         final filteredProducts = snapshot.data!.where((product) {
+        //           final matchesSearch = product.title.toLowerCase().contains(_searchQuery.toLowerCase());
+        //           final matchesCategory = _currentCategory == 'All' || product.category == _currentCategory;
+        //           return matchesSearch && matchesCategory;
+        //         }).toList();
+        //
+        //         if (filteredProducts.isEmpty) {
+        //           return const Center(
+        //             child: Text(
+        //                 'No products match your search or category filter.'),
+        //           );
+        //         }
+        //         return GridView.builder(
+        //           padding: const EdgeInsets.all(8.0),
+        //           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        //             crossAxisCount: 2,
+        //             crossAxisSpacing: 16,
+        //             mainAxisSpacing: 16,
+        //             childAspectRatio: 0.7,
+        //           ),
+        //           itemCount: filteredProducts.length,
+        //           itemBuilder: (context, index) {
+        //             final product = filteredProducts[index];
+        //             return GestureDetector(
+        //               onTap: () {
+        //                 Navigator.of(context).push(
+        //                   MaterialPageRoute(
+        //                     builder: (context) => DetailScreen(product: product),
+        //                   ),
+        //                 );
+        //               },
+        //               child: Card(
+        //                 shape: RoundedRectangleBorder(
+        //                   borderRadius: BorderRadius.circular(10.0),
+        //                 ),
+        //                 child: Padding(
+        //                   padding: const EdgeInsets.all(8.0),
+        //                   child: Column(
+        //                     crossAxisAlignment: CrossAxisAlignment.start,
+        //                     children: [
+        //                       Center(
+        //                         child: Image.network(
+        //                           product.imageUrl,
+        //                           height: 100,
+        //                           errorBuilder: (context, error, stackTrace) => const Icon(Icons.broken_image),
+        //                         ),
+        //                       ),
+        //                       const SizedBox(height: 8),
+        //                       Text(
+        //                         product.title,
+        //                         style: const TextStyle(
+        //                           fontSize: 16,
+        //                           fontWeight: FontWeight.bold,
+        //                         ),
+        //                         maxLines: 2,
+        //                         overflow: TextOverflow.ellipsis,
+        //                       ),
+        //                       const SizedBox(height: 4),
+        //                       Row(
+        //                         children: [
+        //                           const Text(
+        //                             "Rate:",
+        //                             style: TextStyle(fontSize: 16),
+        //                           ),
+        //                           const SizedBox(width: 4),
+        //                           const Icon(
+        //                             Icons.star,
+        //                             size: 16,
+        //                             color: Colors.amber,
+        //                           ),
+        //                           const SizedBox(width: 4),
+        //                           Text(
+        //                             "${product.rating}",
+        //                             style: const TextStyle(fontSize: 16),
+        //                           ),
+        //                         ],
+        //                       ),
+        //                       const SizedBox(height: 4),
+        //                       Text("Price: \$${product.price.toString()}"),
+        //                       const SizedBox(height: 4),
+        //                       Text("Status: ${product.status}"),
+        //                     ],
+        //                   ),
+        //                 ),
+        //               ),
+        //             );
+        //           },
+        //         );
+        //       }
+        //     },
+        //   ),
+        // ),
       ],
     );
   }

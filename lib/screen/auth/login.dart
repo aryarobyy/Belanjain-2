@@ -9,13 +9,13 @@ class Login extends StatefulWidget {
 
 class _LoginState extends State<Login> {
   final _formKey = GlobalKey<FormState>();
-  final TextEditingController _usernameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _isLoading = false;
 
   @override
   void dispose() {
-    _usernameController.dispose();
+    _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
@@ -27,11 +27,7 @@ class _LoginState extends State<Login> {
       });
 
       try {
-        final data = await loginUser(
-            _usernameController.text,
-            _passwordController.text
-        );
-
+        final data = await AuthService().loginUser(email: _emailController.text, password: _passwordController.text);
         print(data);
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -64,9 +60,6 @@ class _LoginState extends State<Login> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Center(child: Text("Register")),
-      ),
       body: Center(
         child: LayoutBuilder(
           builder: (context, constraints) {
@@ -83,19 +76,14 @@ class _LoginState extends State<Login> {
                     children: [
                       const Text("Username"),
                       TextFormField(
-                        controller: _usernameController,
+                        controller: _emailController,
+                        obscureText: false,
                         decoration: const InputDecoration(
-                          labelText: "Username",
-                          hintText: "Enter Username",
-                          prefixIcon: Icon(Icons.person_outline),
+                          labelText: "Email",
+                          hintText: "Enter Email",
+                          prefixIcon: Icon(Icons.email),
                           border: OutlineInputBorder(),
                         ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter a username';
-                          }
-                          return null;
-                        },
                       ),
                       const SizedBox(height: 16),
                       const Text("Password"),

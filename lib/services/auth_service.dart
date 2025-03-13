@@ -17,7 +17,6 @@ class AuthService {
     return regex.hasMatch(email);
   }
 
-
   Future<UserModel?> registerUser({
     required String email,
     required String name,
@@ -26,18 +25,18 @@ class AuthService {
     String? imageUrl,
     String? username,
   }) async {
-    if(email.isEmpty || password.isEmpty){
+    if (email.isEmpty || password.isEmpty) {
       throw Exception("Email dan password tidak boleh kosong");
     }
-    if(isValidEmail(email.trim())){
-      throw Exception( "Format email salah");
+    if (!isValidEmail(email.trim())) {
+      throw Exception("Format email salah");
     }
-    try{
+    try {
       final isRegister = await _firestore
           .collection(USER_COLLECTION)
           .where('email', isEqualTo: email)
           .get();
-      if(isRegister.docs.isNotEmpty){
+      if (isRegister.docs.isNotEmpty) {
         throw Exception("Email sudah terdaftar");
       }
 
@@ -45,25 +44,88 @@ class AuthService {
 
       final data = {
         'user_id': uuid,
-        'name' : name,
-        'email' : email,
-        'image_url' : "",
-        'role' : "customer",
-        'created_at' : DateTime.now().toUtc().toIso8601String(),
+        'name': name,
+        'email': email,
+        'image_url': imageUrl ?? "",
+        'role': role ?? "customer",
+        'created_at': DateTime.now().toUtc().toIso8601String(),
       };
 
-      await _auth.signInWithEmailAndPassword(email: email, password: password);
+      UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
       await _firestore.collection(USER_COLLECTION).doc(uuid).set(data);
-     final storaedData = await _firestore
-        .collection(USER_COLLECTION)
-        .doc(uuid)
-        .get();
-      if(storaedData.exists){
-        throw Exception("Register success");
+
+      final storedData = await _firestore.collection(USER_COLLECTION).doc(uuid).get();
+      if (!storedData.exists) {
+        throw Exception("Gagal menyimpan data pengguna");
       }
-    } catch (e){
-      throw Exception("Gagal login");
+      return UserModel.fromMap(storedData.data()!);
+    } catch (e) {
+      throw Exception("Gagal register: $e");
     }
   }
 
+  Future<String> loginUser({
+    required String email,
+    required String password,
+  }) async {
+    if (email.isEmpty || password.isEmpty) {
+      throw Exception("Email atau password tidak boleh kosong");
+    }
+
+    if (!isValidEmail(email.trim())) {
+      throw Exception("Format email tidak valid");
+    }
+
+    try {
+      UserCredential userCredential = await _auth.signInWithEmailAndPassword(
+        email: email.trim(),
+        password: password,
+      );
+
+      final user = userCredential.user;
+      if (user == null) {
+        throw Exception("Gagal mendapatkan informasi pengguna");
+      }
+
+      final querySnapshot = await _firestore
+          .collection(USER_COLLECTION)
+          .where('email', isEqualTo: email.trim())
+          .limit(1)
+          .get();
+
+      if (querySnapshot.docs.isNotEmpty) {
+        final userDoc = querySnapshot.docs.first;
+        final userId = userDoc.data()['uid'] ?? userDoc.id;
+
+        await _storage.write(key: 'uid', value: userId);
+        await _firestore.collection(USER_COLLECTION).doc(userDoc.id).update({
+          'lastLogin': DateTime.now().toIso8601String(),
+          'isActive': true,
+        });
+
+        return "success";
+      } else {
+        throw Exception("Profil pengguna tidak ditemukan; silakan registrasi terlebih dahulu.");
+      }
+    } on FirebaseAuthException catch (e) {
+      switch (e.code) {
+        case 'user-not-found':
+          throw Exception("Tidak ada pengguna dengan email ini.");
+        case 'wrong-password':
+          throw Exception("Password salah.");
+        case 'invalid-email':
+          throw Exception("Format email tidak valid.");
+        case 'too-many-requests':
+          throw Exception("Terlalu banyak percobaan login. Silakan coba lagi nanti.");
+        default:
+          throw Exception(e.message ?? "Terjadi kesalahan yang tidak diketahui.");
+      }
+    } catch (e) {
+      throw Exception("Gagal login: $e");
+    }
+  }
 }

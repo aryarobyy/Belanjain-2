@@ -1,9 +1,11 @@
+import 'package:belanjain/models/product/category.dart';
+
 class ProductModel {
   final String productId;
   final String title;
   final String imageUrl;
   final String desc;
-  final String category;
+  final ProductCategory category;
   final String status;
   final double rating;
   final double price;
@@ -19,16 +21,16 @@ class ProductModel {
     required this.price,
   });
 
-  factory ProductModel.fromJson(Map<String, dynamic> json) {
+  factory ProductModel.fromMap(Map<String, dynamic> map) {
     return ProductModel(
-      productId: json['id']?.toString() ?? "",
-      title: json['title'] ?? "",
-      imageUrl: json['thumbnail'] ?? "",
-      desc: json['description'] ?? "",
-      category: json['category'] ?? "",
-      status: json['availabilityStatus'] ?? "",
-      rating: (json['rating'] as num?)?.toDouble() ?? 0.0,
-      price: (json['price'] as num?)?.toDouble() ?? 0.0,
+      productId: map['id']?.toString() ?? "",
+      title: map['title'] ?? "",
+      imageUrl: map['thumbnail'] ?? "",
+      desc: map['description'] ?? "",
+      category: ProductCategoryExtension.fromString(map['category'] ?? ""),
+      status: map['availabilityStatus'] ?? "",
+      rating: (map['rating'] as num?)?.toDouble() ?? 0.0,
+      price: (map['price'] as num?)?.toDouble() ?? 0.0,
     );
   }
 
@@ -38,7 +40,7 @@ class ProductModel {
       'title': title,
       'thumbnail': imageUrl,
       'description': desc,
-      'category': category,
+      'category': category.value,
       'availabilityStatus': status,
       'rating': rating,
       'price': price,
@@ -50,7 +52,7 @@ class ProductModel {
     String? title,
     String? imageUrl,
     String? desc,
-    String? category,
+    ProductCategory? category,
     String? status,
     double? rating,
     double? price,

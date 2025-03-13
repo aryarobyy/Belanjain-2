@@ -1,4 +1,4 @@
-import 'package:belanjain/models/product_model.dart';
+import 'package:belanjain/models/product/product_model.dart';
 import 'package:flutter/material.dart';
 
 class DetailScreen extends StatelessWidget {
