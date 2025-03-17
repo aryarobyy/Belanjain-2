@@ -37,7 +37,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       } else if (_currentIndex == _pages.length) {
         Navigator.of(context).push(
           MaterialPageRoute(
-            builder: (context) => const MainScreen(inputCategory: "All"),
+            builder: (context) => const MainScreen(inputCategory: "all"),
           ),
         );
       }

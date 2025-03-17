@@ -25,10 +25,10 @@ class ProductModel {
     return ProductModel(
       productId: map['id']?.toString() ?? "",
       title: map['title'] ?? "",
-      imageUrl: map['thumbnail'] ?? "",
-      desc: map['description'] ?? "",
+      imageUrl: map['image'] ?? "",
+      desc: map['desc'] ?? "",
       category: ProductCategoryExtension.fromString(map['category'] ?? ""),
-      status: map['availabilityStatus'] ?? "",
+      status: map['status'] ?? "",
       rating: (map['rating'] as num?)?.toDouble() ?? 0.0,
       price: (map['price'] as num?)?.toDouble() ?? 0.0,
     );
@@ -38,10 +38,10 @@ class ProductModel {
     return {
       'id': productId,
       'title': title,
-      'thumbnail': imageUrl,
-      'description': desc,
+      'image': imageUrl,
+      'desc': desc,
       'category': category.value,
-      'availabilityStatus': status,
+      'status': status,
       'rating': rating,
       'price': price,
     };
