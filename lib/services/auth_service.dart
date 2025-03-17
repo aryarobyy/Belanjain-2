@@ -128,4 +128,27 @@ class AuthService {
       throw Exception("Gagal login: $e");
     }
   }
+
+  Future<UserModel> updateUser (Map<String, dynamic> updatedData, String userId) async {
+    try{
+
+      await _firestore
+        .collection(USER_COLLECTION)
+        .doc(userId)
+        .set(updatedData);
+
+      final DocumentSnapshot userDoc =
+      await _firestore.collection(USER_COLLECTION).doc(userId).get();
+
+      if (userDoc.exists) {
+        print("Fetched updated user data: ${userDoc.data()}");
+        return UserModel.fromMap(userDoc.data() as Map<String, dynamic>);
+      } else {
+        print("User document not found after update.");
+        throw Exception("Failed to retrieve updated user data");
+      }
+    } catch (e) {
+      throw Exception(e);
+    }
+  }
 }

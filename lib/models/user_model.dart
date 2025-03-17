@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/material.dart';
+
+enum UserRole { admin, user, guest }
 
 class UserModel {
   final String userId;
