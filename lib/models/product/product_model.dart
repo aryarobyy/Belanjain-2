@@ -2,6 +2,7 @@ import 'package:belanjain/models/product/category.dart';
 
 class ProductModel {
   final String productId;
+  final String userId;
   final String title;
   final String imageUrl;
   final String desc;
@@ -12,6 +13,7 @@ class ProductModel {
 
   ProductModel({
     required this.productId,
+    required this.userId,
     required this.title,
     required this.imageUrl,
     required this.desc,
@@ -23,7 +25,8 @@ class ProductModel {
 
   factory ProductModel.fromMap(Map<String, dynamic> map) {
     return ProductModel(
-      productId: map['id']?.toString() ?? "",
+      productId: map['id'] ?? "",
+      userId: map['userId'] ?? "",
       title: map['title'] ?? "",
       imageUrl: map['image'] ?? "",
       desc: map['desc'] ?? "",
@@ -37,6 +40,7 @@ class ProductModel {
   Map<String, dynamic> toJson() {
     return {
       'id': productId,
+      'userId': userId,
       'title': title,
       'image': imageUrl,
       'desc': desc,
@@ -49,6 +53,7 @@ class ProductModel {
 
   ProductModel copyWith({
     String? productId,
+    String? userId,
     String? title,
     String? imageUrl,
     String? desc,
@@ -59,6 +64,7 @@ class ProductModel {
   }) {
     return ProductModel(
       productId: productId ?? this.productId,
+      userId: userId ?? this.userId,
       title: title ?? this.title,
       imageUrl: imageUrl ?? this.imageUrl,
       desc: desc ?? this.desc,

@@ -61,6 +61,17 @@
       }
     }
 
+    Future<List<ProductModel>> getProductsByIds(List<String> productIds) async {
+      final querySnapshot = await _firestore
+          .collection(PRODUCT_COLLECTION)
+          .where('id', whereIn: productIds)
+          .get();
+
+      return querySnapshot.docs
+          .map((doc) => ProductModel.fromMap(doc.data()))
+          .toList();
+    }
+
     Future<ProductModel> updateProduct(Map<String, dynamic> updatedData, String productId) async {
       try {
         await _firestore
