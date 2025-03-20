@@ -1,11 +1,13 @@
 import 'package:belanjain/models/product/category.dart';
 import 'package:belanjain/models/product/product_model.dart';
-import 'package:belanjain/providers/product_provider.dart';
+import 'package:belanjain/screen/cart_screen.dart';
 import 'package:belanjain/screen/detail_screen.dart';
 import 'package:belanjain/screen/kamera_screen.dart';
 import 'package:belanjain/screen/products/add_product.dart';
+import 'package:belanjain/services/cart_service.dart';
 import 'package:belanjain/services/product_service.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class MainScreen extends StatefulWidget {
   final String inputCategory;
@@ -19,10 +21,11 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
-  final ProductProvider _productProvider = ProductProvider();
   String _currentCategory = 'all';
   String _searchQuery = '';
   bool _isSearching = false;
+  String? currentUserId;
+  List<ProductModel>? _cachedProducts;
   final TextEditingController _searchController = TextEditingController();
 
   List<String> categories = ProductCategory.values.map((e) => e.value).toList();
@@ -31,9 +34,39 @@ class _MainScreenState extends State<MainScreen> {
   void initState() {
     super.initState();
     _currentCategory = widget.inputCategory;
-    _productProvider.loadProducts().then((_) {
-      setState(() {});
-    });
+    print("MainScreen loaded");
+    _fetchCurrentUser();
+    _fetchProducts();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _fetchCurrentUser() async {
+    const storage = FlutterSecureStorage();
+    String? userId = await storage.read(key: 'uid');
+
+    if (mounted) {
+      setState(() {
+        currentUserId = userId;
+      });
+    }
+  }
+
+  Future<void> _fetchProducts() async {
+    try {
+      final products = await ProductService().getProducts();
+      if (mounted) {
+        setState(() {
+          _cachedProducts = products;
+        });
+      }
+    } catch (e) {
+      print('Error fetching products: $e');
+    }
   }
 
   void _startSearch() {
@@ -60,6 +93,7 @@ class _MainScreenState extends State<MainScreen> {
       );
     }
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         automaticallyImplyLeading: false,
         title: _isSearching
@@ -81,16 +115,16 @@ class _MainScreenState extends State<MainScreen> {
           if (_isSearching)
             Row(
               children: [
-                IconButton( //belum bisa dilanjut
-                  icon: const Icon(Icons.camera_alt_outlined),
-                  onPressed: () {
-                    Navigator.push(context,
-                        MaterialPageRoute(builder: (context) {
-                          return KameraScreen();
-                        })
-                    );
-                  },
-                ),
+                // IconButton( //belum bisa dilanjut
+                //   icon: const Icon(Icons.camera_alt_outlined),
+                //   onPressed: () {
+                //     Navigator.push(context,
+                //         MaterialPageRoute(builder: (context) {
+                //           return KameraScreen();
+                //         })
+                //     );
+                //   },
+                // ),
                 IconButton(
                   icon: const Icon(Icons.close),
                   onPressed: _stopSearch,
@@ -98,9 +132,26 @@ class _MainScreenState extends State<MainScreen> {
               ],
             )
           else
-            IconButton(
-              icon: const Icon(Icons.search),
-              onPressed: _startSearch,
+            Row(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.search),
+                  onPressed: _startSearch,
+                ),
+                IconButton(
+                    onPressed: () async {
+                      try {
+                        await CartService().postCart();
+                        Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => CartScreen(userId: currentUserId!))
+                        );
+                      } catch (e) {
+                        print('Error: $e');
+                      }
+                    },
+                    icon: const Icon(Icons.shopping_cart_outlined)),
+              ],
             ),
         ],
       ),
@@ -165,117 +216,108 @@ class _MainScreenState extends State<MainScreen> {
         ),
         const SizedBox(height: 16),
         Expanded(
-          child: FutureBuilder<List<ProductModel>>(
-            future: ProductService().getProducts(),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              } else if (snapshot.hasError) {
-                return Center(
-                  child: Text('Error: ${snapshot.error}'),
-                );
-              } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                return const Center(
-                  child: Text('No products available.'),
-                );
-              } else {
-                final filteredProducts = snapshot.data!.where((product) {
-                  final matchesSearch = product.title.toLowerCase().contains(_searchQuery.toLowerCase());
-                  final matchesCategory = _currentCategory == 'all' ||
-                      product.category.toString().split('.').last.toLowerCase() == _currentCategory.toLowerCase();
-                  //outputnya ProductCategory.electronics jadi harus di split
-                  return matchesSearch && matchesCategory;
-                }).toList();
-
-                if (filteredProducts.isEmpty) {
-                  return Center(
-                    child: Text(
-                        'No products match your search or category filter. ${_currentCategory}'
-                    ),
-                  );
-                }
-                return GridView.builder(
-                  padding: const EdgeInsets.all(8.0),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 16,
-                    mainAxisSpacing: 16,
-                    childAspectRatio: 0.7,
-                  ),
-                  itemCount: filteredProducts.length,
-                  itemBuilder: (context, index) {
-                    final product = filteredProducts[index];
-                    print("Image: ${product.imageUrl}");
-                    return GestureDetector(
-                      onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (context) => DetailScreen(product: product),
-                          ),
-                        );
-                      },
-                      child: Card(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10.0),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Center(
-                                child: Image.network(
-                                  product.imageUrl,
-                                  height: 100,
-                                  errorBuilder: (context, error, stackTrace) => const Icon(Icons.broken_image),
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                product.title,
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const SizedBox(height: 4),
-                              Row(
-                                children: [
-                                  const Text(
-                                    "Rate:",
-                                    style: TextStyle(fontSize: 16),
-                                  ),
-                                  const SizedBox(width: 4),
-                                  const Icon(
-                                    Icons.star,
-                                    size: 16,
-                                    color: Colors.amber,
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    "${product.rating}",
-                                    style: const TextStyle(fontSize: 16),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 4),
-                              Text("Price: \$${product.price.toString()}"),
-                              const SizedBox(height: 4),
-                              Text("Status: ${product.status}"),
-                            ],
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                );
-              }
-            },
-          ),
+          child: _buildProductList(),
         ),
       ],
+    );
+  }
+
+  Widget _buildProductList() {
+    if (_cachedProducts == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    final filteredProducts = _cachedProducts!.where((product) {
+      final matchesSearch = product.title.toLowerCase().contains(_searchQuery.toLowerCase());
+      final matchesCategory = _currentCategory == 'all' ||
+          product.category.toString().split('.').last.toLowerCase() == _currentCategory.toLowerCase();
+      return matchesSearch && matchesCategory;
+    }).toList();
+
+    if (filteredProducts.isEmpty) {
+      return const Center(
+        child: Text('No products match your search or category filter.'),
+      );
+    }
+
+    return GridView.builder(
+      padding: const EdgeInsets.all(8.0),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 16,
+        mainAxisSpacing: 16,
+        childAspectRatio: 0.7,
+      ),
+      itemCount: filteredProducts.length,
+      itemBuilder: (context, index) {
+        final product = filteredProducts[index];
+        return GestureDetector(
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => DetailScreen(product: product, userId: currentUserId as String),
+              ),
+            ).then((_) {
+              _fetchProducts();
+            });
+          },
+          child: Card(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10.0),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Image.network(
+                      product.imageUrl,
+                      height: 100,
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) => const Icon(Icons.broken_image),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    product.title,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      const Text(
+                        "Rate:",
+                        style: TextStyle(fontSize: 16),
+                      ),
+                      const SizedBox(width: 4),
+                      const Icon(
+                        Icons.star,
+                        size: 16,
+                        color: Colors.amber,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        "${product.rating}",
+                        style: const TextStyle(fontSize: 16),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text("Price: \$${product.price.toString()}"),
+                  const SizedBox(height: 4),
+                  Text("Status: ${product.status}"),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }
