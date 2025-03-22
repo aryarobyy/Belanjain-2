@@ -62,7 +62,6 @@ class _CartScreenState extends State<CartScreen> with SingleTickerProviderStateM
   void _updateCart(double price, int newAmount) async {
     if (_cart == null || _products == null) return;
     try {
-      // Re-use insertProduct or a dedicated update method, depending on your Firestore logic
       Map<String, dynamic> updatedData = {
         "id": _cart!.cartId,
         "productId": _products!.productId,
@@ -72,7 +71,6 @@ class _CartScreenState extends State<CartScreen> with SingleTickerProviderStateM
 
       await CartProductService().insertProduct(updatedData, _cart!.cartId, _products!.productId);
 
-      // Update local state to reflect the new amount and total price
       setState(() {
         _products = _products!.copyWith(
           amount: newAmount,
@@ -84,7 +82,6 @@ class _CartScreenState extends State<CartScreen> with SingleTickerProviderStateM
     }
   }
 
-  // Show a confirmation dialog before deleting the product
   Future<void> _confirmDelete() async {
     if (_cart == null || _products == null) return;
 
@@ -108,18 +105,53 @@ class _CartScreenState extends State<CartScreen> with SingleTickerProviderStateM
       },
     );
 
-    // If the user confirmed the deletion, proceed
     if (isConfirmed == true) {
       try {
         await CartProductService().deleteProduct(_cart!.cartId, _products!.productId);
         setState(() {
-          // Set _products to null so the UI updates accordingly
           _products = null;
         });
         MySnackbar(context, "Produk berhasil dihapus dari keranjang");
       } catch (e) {
         print("Error deleting product: $e");
         MySnackbar(context, "Terjadi kesalahan saat menghapus produk");
+      }
+    }
+  }
+
+  Future<void> _confirmPayment() async {
+    if (_cart == null || _products == null) return;
+
+    final bool? isConfirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Konfirmasi Pembayaran'),
+          content: const Text('Apakah Anda yakin ingin membayar?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Batal'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Bayar'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (isConfirmed == true) {
+      try {
+        await CartService().deleteCart(_cart!.cartId);
+        setState(() {
+          _products = null;
+        });
+        MySnackbar(context, "Produk berhasil dibayar");
+      } catch (e) {
+        print("Error deleting product: $e");
+        MySnackbar(context, "Terjadi kesalahan saat membayar");
       }
     }
   }
@@ -293,9 +325,7 @@ class _CartScreenState extends State<CartScreen> with SingleTickerProviderStateM
         color: Colors.white,
         padding: const EdgeInsets.all(16.0),
         child: ElevatedButton(
-          onPressed: () {
-            MySnackbar(context, "Lanjut ke pembayaran");
-          },
+          onPressed:_confirmPayment,
           style: ElevatedButton.styleFrom(
             padding: const EdgeInsets.symmetric(vertical: 16.0),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),

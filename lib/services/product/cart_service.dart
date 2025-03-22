@@ -92,4 +92,15 @@ class CartService {
     }
     throw Exception("Data kosong");
   }
+
+  Future<void> deleteCart(String cartId) async {
+    try{
+      await _firestore
+          .collection(CART_COLLECTION)
+          .doc(cartId)
+          .delete();
+    } catch (e) {
+      throw Exception(e);
+    }
+  }
 }
