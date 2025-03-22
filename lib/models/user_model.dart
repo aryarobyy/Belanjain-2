@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-enum UserRole { admin, user, guest }
+enum UserRole { admin, customer, seller }
 
 class UserModel {
   final String userId;
@@ -27,27 +27,27 @@ class UserModel {
     }
 
     return UserModel(
-      userId: data['user_id'] ?? "",
+      userId: data['id'] ?? "",
       email: data['email'] ?? "",
-      imageUrl: data['image_url'] ?? "",
+      imageUrl: data['imageUrl'] ?? "",
       name: data['name'] ?? "",
       username: data['username'] ?? "",
       role: data['role'] ?? '',
-      createdAt: data['created_at'] is Timestamp
-          ? (data['created_at'] as Timestamp).toDate()
+      createdAt: data['createdAt'] is Timestamp
+          ? (data['createdAt'] as Timestamp).toDate()
           : DateTime.now(),
     );
   }
 
   Map<String, dynamic> toMap() {
     return {
-      'user_id': userId,
+      'id': userId,
       'email': email,
-      'image_url': imageUrl,
+      'imageUrl': imageUrl,
       'name': name,
       'username': username,
       'role': role,
-      'created_at': createdAt,
+      'createdAt': createdAt,
     };
   }
 

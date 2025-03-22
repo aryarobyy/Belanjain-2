@@ -43,22 +43,24 @@ class AuthService {
       final String uuid = Uuid().v4();
 
       final data = {
-        'user_id': uuid,
+        'id': uuid,
         'name': name,
         'email': email,
-        'image_url': imageUrl ?? "",
+        'imageUrl': imageUrl ?? "",
         'role': role ?? "customer",
-        'created_at': DateTime.now().toUtc().toIso8601String(),
+        'createdAt': DateTime.now().toUtc().toIso8601String(),
       };
 
-      UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
+      UserCredential userCredential =
+          await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
 
       await _firestore.collection(USER_COLLECTION).doc(uuid).set(data);
 
-      final storedData = await _firestore.collection(USER_COLLECTION).doc(uuid).get();
+      final storedData =
+          await _firestore.collection(USER_COLLECTION).doc(uuid).get();
       if (!storedData.exists) {
         throw Exception("Gagal menyimpan data pengguna");
       }
@@ -102,6 +104,7 @@ class AuthService {
         final userId = userDoc.data()['uid'] ?? userDoc.id;
 
         await _storage.write(key: 'uid', value: userId);
+        await _storage.write(key: 'role', value: userDoc.data()['role']);
         await _firestore.collection(USER_COLLECTION).doc(userDoc.id).update({
           'lastLogin': DateTime.now().toIso8601String(),
           'isActive': true,
@@ -109,7 +112,8 @@ class AuthService {
 
         return "success";
       } else {
-        throw Exception("Profil pengguna tidak ditemukan; silakan registrasi terlebih dahulu.");
+        throw Exception(
+            "Profil pengguna tidak ditemukan; silakan registrasi terlebih dahulu.");
       }
     } on FirebaseAuthException catch (e) {
       switch (e.code) {
@@ -120,25 +124,24 @@ class AuthService {
         case 'invalid-email':
           throw Exception("Format email tidak valid.");
         case 'too-many-requests':
-          throw Exception("Terlalu banyak percobaan login. Silakan coba lagi nanti.");
+          throw Exception(
+              "Terlalu banyak percobaan login. Silakan coba lagi nanti.");
         default:
-          throw Exception(e.message ?? "Terjadi kesalahan yang tidak diketahui.");
+          throw Exception(
+              e.message ?? "Terjadi kesalahan yang tidak diketahui.");
       }
     } catch (e) {
       throw Exception("Gagal login: $e");
     }
   }
 
-  Future<UserModel> updateUser (Map<String, dynamic> updatedData, String userId) async {
-    try{
-
-      await _firestore
-        .collection(USER_COLLECTION)
-        .doc(userId)
-        .set(updatedData);
+  Future<UserModel> updateUser(
+      Map<String, dynamic> updatedData, String userId) async {
+    try {
+      await _firestore.collection(USER_COLLECTION).doc(userId).set(updatedData);
 
       final DocumentSnapshot userDoc =
-      await _firestore.collection(USER_COLLECTION).doc(userId).get();
+          await _firestore.collection(USER_COLLECTION).doc(userId).get();
 
       if (userDoc.exists) {
         print("Fetched updated user data: ${userDoc.data()}");
@@ -150,5 +153,30 @@ class AuthService {
     } catch (e) {
       throw Exception(e);
     }
+  }
+
+  Future<String> getCurrentUserId() async {
+    try {
+      final user = _auth.currentUser;
+      if (user == null) {
+        throw Exception("No user is currently logged in");
+      }
+      return user.uid;
+    } catch (e) {
+      throw Exception();
+    }
+  }
+
+  Future<UserModel> getUserById(String userId) async {
+    final userData =
+        await _firestore.collection(USER_COLLECTION).doc(userId).get();
+
+    if (userData.exists) {
+      final data = userData.data();
+      if (data != null) {
+        return UserModel.fromMap(data);
+      }
+    }
+    throw Exception('User not found');
   }
 }

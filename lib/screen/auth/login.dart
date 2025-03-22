@@ -35,7 +35,7 @@ class _LoginState extends State<Login> {
             );
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(builder: (context) => const MainScreen(inputCategory: "All")),
+              MaterialPageRoute(builder: (context) => const MainScreen(inputCategory: "all")),
             );
           }
 
@@ -74,7 +74,7 @@ class _LoginState extends State<Login> {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      const Text("Username"),
+                      const Text("Email"),
                       TextFormField(
                         controller: _emailController,
                         obscureText: false,
