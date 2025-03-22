@@ -6,7 +6,7 @@ import 'package:belanjain/components/text_field.dart';
 import 'package:belanjain/models/product/category.dart';
 import 'package:belanjain/screen/main_screen.dart';
 import 'package:belanjain/services/image_service.dart';
-import 'package:belanjain/services/product_service.dart';
+import 'package:belanjain/services/product/product_service.dart';
 import 'package:belanjain/widgets/header.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
