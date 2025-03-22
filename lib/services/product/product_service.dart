@@ -23,8 +23,8 @@
         final String uuid = Uuid().v4();
 
         final data = {
+          'id' : uuid,
           'title': title,
-          'product_id' : uuid,
           'category': category.value,
           'price': price,
           'stock': stock,
@@ -61,15 +61,17 @@
       }
     }
 
-    Future<List<ProductModel>> getProductsByIds(List<String> productIds) async {
-      final querySnapshot = await _firestore
+    Future<ProductModel> getProductsById(String productId) async {
+      final docSnapshot = await _firestore
           .collection(PRODUCT_COLLECTION)
-          .where('id', whereIn: productIds)
+          .doc(productId)
           .get();
 
-      return querySnapshot.docs
-          .map((doc) => ProductModel.fromMap(doc.data()))
-          .toList();
+      final data = docSnapshot.data();
+      if (data == null) {
+        throw Exception("Product not found");
+      }
+      return ProductModel.fromMap(data);
     }
 
     Future<ProductModel> updateProduct(Map<String, dynamic> updatedData, String productId) async {

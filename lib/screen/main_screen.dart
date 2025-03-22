@@ -3,9 +3,9 @@ import 'package:belanjain/models/product/product_model.dart';
 import 'package:belanjain/screen/cart_screen.dart';
 import 'package:belanjain/screen/detail_screen.dart';
 import 'package:belanjain/screen/kamera_screen.dart';
-import 'package:belanjain/screen/products/add_product.dart';
-import 'package:belanjain/services/cart_service.dart';
-import 'package:belanjain/services/product_service.dart';
+import 'package:belanjain/screen/add_product.dart';
+import 'package:belanjain/services/product/cart_service.dart';
+import 'package:belanjain/services/product/product_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 

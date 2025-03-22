@@ -10,6 +10,7 @@ class ProductModel {
   final String status;
   final double rating;
   final double price;
+  final int stock;
 
   ProductModel({
     required this.productId,
@@ -21,6 +22,7 @@ class ProductModel {
     required this.status,
     required this.rating,
     required this.price,
+    required this.stock,
   });
 
   factory ProductModel.fromMap(Map<String, dynamic> map) {
@@ -34,6 +36,7 @@ class ProductModel {
       status: map['status'] ?? "",
       rating: (map['rating'] as num?)?.toDouble() ?? 0.0,
       price: (map['price'] as num?)?.toDouble() ?? 0.0,
+      stock: (map['stock'] as num?)?.toInt() ?? 0,
     );
   }
 
@@ -48,6 +51,7 @@ class ProductModel {
       'status': status,
       'rating': rating,
       'price': price,
+      'stock': stock,
     };
   }
 
@@ -61,6 +65,7 @@ class ProductModel {
     String? status,
     double? rating,
     double? price,
+    int? stock,
   }) {
     return ProductModel(
       productId: productId ?? this.productId,
@@ -72,6 +77,7 @@ class ProductModel {
       status: status ?? this.status,
       rating: rating ?? this.rating,
       price: price ?? this.price,
+      stock: stock ?? this.stock,
     );
   }
 }
