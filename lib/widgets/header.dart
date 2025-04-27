@@ -1,3 +1,4 @@
+import 'package:belanjain/components/colors.dart';
 import 'package:flutter/material.dart';
 
 class MyHeader extends StatelessWidget {
@@ -13,13 +14,16 @@ class MyHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: Colors.blue,
+      color: primaryColor,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       child: Row(
         children: [
           IconButton(
             onPressed: onTap,
-            icon: Icon(Icons.arrow_back_outlined)
+            icon: const Icon(
+              Icons.arrow_back_outlined,
+              color: Colors.white,
+            )
           ),
           const SizedBox(width: 8),
           Expanded(

@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:belanjain/screen/login_screen.dart';
 import 'main_screen.dart';
-
-int _currentIndex = 0;
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -12,6 +9,8 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
+  int _currentIndex = 0;
+
   final List<Map<String, dynamic>> _pages = [
     {
       'title': 'Belanjain',

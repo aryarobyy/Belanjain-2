@@ -28,6 +28,7 @@ class CartService {
         'id': uuid,
         'buyerId': userId,
         'createdAt': Timestamp.fromDate(DateTime.now()),
+        'totalPrice': 0,
       };
 
       await _firestore.collection(CART_COLLECTION).doc(uuid).set(data);
@@ -45,23 +46,6 @@ class CartService {
     }
   }
 
-  // Future<CartModel> insertProduct(Map<String, dynamic> data, String cartId) async {
-  //   try {
-  //     await _firestore.collection(CART_COLLECTION).doc(cartId).set(data);
-  //
-  //     final DocumentSnapshot cartDoc =
-  //         await _firestore.collection(CART_COLLECTION).doc(cartId).get();
-  //
-  //     if (cartDoc.exists) {
-  //       return CartModel.fromMap(cartDoc.data() as Map<String, dynamic>);
-  //     } else {
-  //       print("User document not found after update.");
-  //       throw Exception("Failed to retrieve updated user data");
-  //     }
-  //   } catch (e) {
-  //     throw Exception(e);
-  //   }
-  // }
 
   Future<CartModel> getCartByUserId(String userId) async {
     try {

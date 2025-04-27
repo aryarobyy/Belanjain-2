@@ -4,11 +4,13 @@ class CartModel {
   final String cartId;
   final String buyerId;
   final DateTime createdAt;
+  final double totalPrice;
 
   CartModel({
     required this.cartId,
     required this.buyerId,
     required this.createdAt,
+    required this.totalPrice,
   });
 
   factory CartModel.fromMap(Map<String, dynamic> map) {
@@ -18,6 +20,7 @@ class CartModel {
       createdAt: map['createdAt'] is Timestamp
           ? (map['createdAt'] as Timestamp).toDate()
           : DateTime.now(),
+      totalPrice: (map['totalPrice'] as num?)?.toDouble() ?? 0.0,
     );
   }
 
@@ -25,6 +28,7 @@ class CartModel {
     return {
       'id': cartId,
       'buyerId': buyerId,
+      'totalPrice': totalPrice,
       'createdAt': Timestamp.fromDate(createdAt),
     };
   }
@@ -32,11 +36,13 @@ class CartModel {
   CartModel copyWith({
     String? cartId,
     String? buyerId,
+    double? totalPrice,
     DateTime? createdAt,
   }) {
     return CartModel(
       cartId: cartId ?? this.cartId,
       buyerId: buyerId ?? this.buyerId,
+      totalPrice: totalPrice ?? this.totalPrice,
       createdAt: createdAt ?? this.createdAt,
     );
   }

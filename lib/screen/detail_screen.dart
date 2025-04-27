@@ -2,6 +2,7 @@ import 'package:belanjain/components/snackbar.dart';
 import 'package:belanjain/models/product/product_model.dart';
 import 'package:belanjain/services/product/cartProduct_service.dart';
 import 'package:belanjain/services/product/cart_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 class DetailScreen extends StatefulWidget {
@@ -45,10 +46,12 @@ class _DetailScreenState extends State<DetailScreen> {
     }
 
     try{
+      final tp = widget.product.price * _amount;
       Map<String, dynamic> data = {
         "productId": widget.product.productId,
         "amount": _amount,
-        "totalPrice": widget.product.price * _amount,
+        "totalPrice":  tp,
+        "isChecked": false,
       };
 
       await CartProductService().insertProduct(data, cart.cartId, widget.product.productId);

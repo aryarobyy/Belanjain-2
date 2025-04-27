@@ -42,7 +42,7 @@ class _MyAppState extends State<MyApp> {
     setState(() {
       _userId = userId;
     });
-  }
+  } 
 
   @override
   Widget build(BuildContext context) {
@@ -51,7 +51,7 @@ class _MyAppState extends State<MyApp> {
         debugShowCheckedModeBanner: false,
         title: "Belanjain",
         theme: ThemeData(),
-        home: _userId == null ? AuthScreen() : MainScreen(),
+        home: _userId == null ? const AuthScreen() : const MainScreen(),
       );
   }
 }

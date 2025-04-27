@@ -38,7 +38,28 @@ class CartProductService {
     }
   }
 
-  Future<CartProductModel> getCartProduct(String cartId) async {
+  Future<CartProductModel> getCartProduct(String cartId, productId) async {
+    try {
+      final querySnapshot = await _firestore
+        .collection(CART_COLLECTION)
+        .doc(cartId)
+        .collection(PRODUCT_LIST_COLLECTION)
+        .doc(productId)
+        .get();
+
+      if (querySnapshot.exists) {
+        final data = querySnapshot.data();
+        if (data != null) {
+          return CartProductModel.fromMap(data);
+        }
+      }
+      throw Exception("Data kosong");
+    } catch (e) {
+      throw Exception(e);
+    }
+  }
+
+  Future<List<CartProductModel>> getAllCartProducts(String cartId) async {
     try {
       final querySnapshot = await _firestore
           .collection(CART_COLLECTION)
@@ -47,12 +68,14 @@ class CartProductService {
           .get();
 
       if (querySnapshot.docs.isEmpty) {
-        throw Exception("Product not found");
+        return [];
       }
 
-      final data = querySnapshot.docs.first.data();
+      final products = querySnapshot.docs.map((doc) {
+        return CartProductModel.fromMap(doc.data());
+      }).toList();
 
-      return CartProductModel.fromMap(data);
+      return products;
     } catch (e) {
       throw Exception(e);
     }

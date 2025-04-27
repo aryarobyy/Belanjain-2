@@ -1,13 +1,16 @@
+import 'package:belanjain/components/colors.dart';
 import 'package:belanjain/models/product/category.dart';
 import 'package:belanjain/models/product/product_model.dart';
 import 'package:belanjain/screen/cart_screen.dart';
 import 'package:belanjain/screen/detail_screen.dart';
 import 'package:belanjain/screen/kamera_screen.dart';
 import 'package:belanjain/screen/add_product.dart';
+import 'package:belanjain/services/auth_service.dart';
 import 'package:belanjain/services/product/cart_service.dart';
 import 'package:belanjain/services/product/product_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 class MainScreen extends StatefulWidget {
   final String inputCategory;
@@ -24,7 +27,8 @@ class _MainScreenState extends State<MainScreen> {
   String _currentCategory = 'all';
   String _searchQuery = '';
   bool _isSearching = false;
-  String? currentUserId;
+  String? _currentUserId;
+  String? _userRole;
   List<ProductModel>? _cachedProducts;
   final TextEditingController _searchController = TextEditingController();
 
@@ -48,10 +52,12 @@ class _MainScreenState extends State<MainScreen> {
   Future<void> _fetchCurrentUser() async {
     const storage = FlutterSecureStorage();
     String? userId = await storage.read(key: 'uid');
+    final role = await AuthService().getUserById(userId as String);
 
     if (mounted) {
       setState(() {
-        currentUserId = userId;
+        _currentUserId = userId;
+        _userRole = role.role;
       });
     }
   }
@@ -110,7 +116,7 @@ class _MainScreenState extends State<MainScreen> {
             });
           },
         )
-            : const Text('Belanjain'),
+            : const Text("Belanjain"),
         actions: [
           if (_isSearching)
             Row(
@@ -144,7 +150,7 @@ class _MainScreenState extends State<MainScreen> {
                         await CartService().postCart();
                         Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (context) => CartScreen(userId: currentUserId!))
+                            MaterialPageRoute(builder: (context) => CartScreen(userId: _currentUserId!))
                         );
                       } catch (e) {
                         print('Error: $e');
@@ -161,7 +167,8 @@ class _MainScreenState extends State<MainScreen> {
           Positioned(
             bottom: 20,
             right: 20,
-            child: IconButton(
+            child: _userRole ==  'admin'
+                ? IconButton(
               onPressed: () {
                 if (mounted) {
                   Navigator.push(
@@ -174,7 +181,7 @@ class _MainScreenState extends State<MainScreen> {
                 Icons.add,
                 size: 50,
               ),
-            ),
+            ) : const SizedBox.shrink(),
           ),
         ],
       ),
@@ -195,6 +202,7 @@ class _MainScreenState extends State<MainScreen> {
               return Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8.0),
                 child: ChoiceChip(
+                  checkmarkColor: Colors.white,
                   label: Text(
                     category.toUpperCase(),
                     style: TextStyle(
@@ -202,7 +210,7 @@ class _MainScreenState extends State<MainScreen> {
                     ),
                   ),
                   selected: isSelected,
-                  selectedColor: Colors.blue,
+                  selectedColor: primaryColor,
                   backgroundColor: Colors.grey[200],
                   onSelected: (bool selected) {
                     setState(() {
@@ -236,7 +244,7 @@ class _MainScreenState extends State<MainScreen> {
 
     if (filteredProducts.isEmpty) {
       return const Center(
-        child: Text('No products match your search or category filter.'),
+        child: Text('Prooduk masih kosong'),
       );
     }
 
@@ -255,7 +263,7 @@ class _MainScreenState extends State<MainScreen> {
           onTap: () {
             Navigator.of(context).push(
               MaterialPageRoute(
-                builder: (context) => DetailScreen(product: product, userId: currentUserId as String),
+                builder: (context) => DetailScreen(product: product, userId: _currentUserId as String),
               ),
             ).then((_) {
               _fetchProducts();
@@ -309,7 +317,7 @@ class _MainScreenState extends State<MainScreen> {
                     ],
                   ),
                   const SizedBox(height: 4),
-                  Text("Price: \$${product.price.toString()}"),
+                  Text("Price: Rp.${product.price.toString()}"),
                   const SizedBox(height: 4),
                   Text("Status: ${product.status}"),
                 ],
