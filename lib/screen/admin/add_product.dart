@@ -64,13 +64,17 @@ class _AddProductState extends State<AddProduct> with WidgetsBindingObserver {
         return;
       }
 
+      final stock = double.parse(_stockController.text.trim());
+      final status = stock > 1 ? 'ready' : 'Out of Stock';
+
       await ProductService().postProduct(
         title: _titleController.text.trim(),
         category: _selectedCategory,
         price: double.parse(_priceController.text.trim()),
-        stock: double.parse(_stockController.text.trim()),
+        stock: stock,
         desc: _descController.text.trim(),
         imageUrl: _imgUrl!,
+        status: 'ready',
       );
 
       _isSubmitted = true; // Tandai bahwa produk telah dikirim

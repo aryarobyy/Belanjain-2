@@ -93,4 +93,24 @@ class CartProductService {
       throw Exception(e);
     }
   }
+
+  Future<void> deleteProducts(String cartId, List<String> productIds) async {
+    try {
+      final batch = _firestore.batch();
+
+      for (var productId in productIds) {
+        final docRef = _firestore
+            .collection(CART_COLLECTION)
+            .doc(cartId)
+            .collection(PRODUCT_LIST_COLLECTION)
+            .doc(productId);
+        batch.delete(docRef);
+      }
+
+      await batch.commit();
+    } catch (e) {
+      throw Exception(e);
+    }
+  }
+
 }

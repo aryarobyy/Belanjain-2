@@ -2,15 +2,16 @@ import 'package:belanjain/components/colors.dart';
 import 'package:belanjain/models/product/category.dart';
 import 'package:belanjain/models/product/product_model.dart';
 import 'package:belanjain/screen/cart_screen.dart';
-import 'package:belanjain/screen/detail_screen.dart';
+import 'package:belanjain/screen/product/detail_screen.dart';
 import 'package:belanjain/screen/kamera_screen.dart';
-import 'package:belanjain/screen/add_product.dart';
+import 'package:belanjain/screen/admin/add_product.dart';
+import 'package:belanjain/screen/profile_screen.dart';
 import 'package:belanjain/services/auth_service.dart';
 import 'package:belanjain/services/product/cart_service.dart';
 import 'package:belanjain/services/product/product_service.dart';
+import 'package:belanjain/widgets/banner.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 
 class MainScreen extends StatefulWidget {
   final String inputCategory;
@@ -30,6 +31,7 @@ class _MainScreenState extends State<MainScreen> {
   String? _currentUserId;
   String? _userRole;
   List<ProductModel>? _cachedProducts;
+  int _selectedIndex = 0;
   final TextEditingController _searchController = TextEditingController();
 
   List<String> categories = ProductCategory.values.map((e) => e.value).toList();
@@ -89,6 +91,26 @@ class _MainScreenState extends State<MainScreen> {
     });
   }
 
+  Widget _buildCurrentScreen() {
+    switch (_selectedIndex) {
+      case 0:
+        return _buildFiltered(context);
+      // case 1:
+      //   return KameraScreen();
+      case 1:
+        return ProfileScreen();
+      default:
+        return const Center(child: Text('Halaman tidak ditemukan'));
+    }
+  }
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
+
+
   @override
   Widget build(BuildContext context){
     if (!categories.contains(widget.inputCategory)) {
@@ -117,20 +139,20 @@ class _MainScreenState extends State<MainScreen> {
           },
         )
             : const Text("Belanjain"),
+        leading: Builder(
+          builder: (context) {
+            return IconButton(
+              onPressed: () {
+                Scaffold.of(context).openDrawer();
+              },
+              icon: const Icon(Icons.menu),
+            );
+          },
+        ),
         actions: [
           if (_isSearching)
             Row(
               children: [
-                // IconButton( //belum bisa dilanjut
-                //   icon: const Icon(Icons.camera_alt_outlined),
-                //   onPressed: () {
-                //     Navigator.push(context,
-                //         MaterialPageRoute(builder: (context) {
-                //           return KameraScreen();
-                //         })
-                //     );
-                //   },
-                // ),
                 IconButton(
                   icon: const Icon(Icons.close),
                   onPressed: _stopSearch,
@@ -145,47 +167,109 @@ class _MainScreenState extends State<MainScreen> {
                   onPressed: _startSearch,
                 ),
                 IconButton(
-                    onPressed: () async {
-                      try {
-                        await CartService().postCart();
-                        Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => CartScreen(userId: _currentUserId!))
-                        );
-                      } catch (e) {
-                        print('Error: $e');
-                      }
-                    },
-                    icon: const Icon(Icons.shopping_cart_outlined)),
+                  onPressed: () async {
+                    try {
+                      await CartService().postCart();
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => CartScreen(userId: _currentUserId!)));
+                    } catch (e) {
+                      print('Error: $e');
+                    }
+                  },
+                  icon: const Icon(Icons.shopping_cart_outlined),
+                ),
               ],
             ),
         ],
       ),
+
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            const DrawerHeader(
+              decoration: BoxDecoration(
+                color: primaryColor,
+              ),
+              child: Text(
+                'Belanjain Menu',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
+                ),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.home),
+              title: const Text('Home'),
+              onTap: () {
+                setState(() {
+                  _selectedIndex = 0;
+                });
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.camera_alt),
+              title: const Text('Kamera'),
+              onTap: () {
+                setState(() {
+                  _selectedIndex = 1;
+                });
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.person),
+              title: const Text('Profile'),
+              onTap: () {
+                setState(() {
+                  _selectedIndex = 2;
+                });
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.logout),
+              title: const Text('Logout'),
+              onTap: () async {
+                const storage = FlutterSecureStorage();
+                await storage.delete(key: 'uid');
+                Navigator.of(context).popUntil((route) => route.isFirst);
+              },
+            ),
+          ],
+        ),
+      ),
       body: Stack(
         children: [
-          _buildFiltered(context),
+          _buildCurrentScreen(),
           Positioned(
             bottom: 20,
             right: 20,
-            child: _userRole ==  'admin'
+            child: _userRole == 'admin' && _selectedIndex == 0
                 ? IconButton(
               onPressed: () {
-                if (mounted) {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const AddProduct()),
-                  );
-                }
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const AddProduct()),
+                ).then((_) {
+                  _fetchProducts();
+                });
               },
               icon: const Icon(
                 Icons.add,
                 size: 50,
               ),
-            ) : const SizedBox.shrink(),
+            )
+                : const SizedBox.shrink(),
           ),
         ],
       ),
     );
+
   }
 
   Widget _buildFiltered(BuildContext context) {
@@ -224,7 +308,17 @@ class _MainScreenState extends State<MainScreen> {
         ),
         const SizedBox(height: 16),
         Expanded(
-          child: _buildProductList(),
+          child: Column(
+            children: [
+              // MyBanner( //opsional sih
+              //   items: dummyBannerItems,
+              //
+              // ),
+              Expanded(
+                child: _buildProductList()
+              ),
+            ],
+          ),
         ),
       ],
     );
@@ -328,4 +422,29 @@ class _MainScreenState extends State<MainScreen> {
       },
     );
   }
+
+  final List<Map<String, dynamic>> dummyBannerItems = [
+    {
+      'imageUrl': 'https://images.unsplash.com/photo-1606787366850-de6330128bfc?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=60',
+      'title': 'Promo Akhir Tahun',
+      'subtitle': 'Diskon hingga 50% untuk semua produk!',
+    },
+    {
+      'imageUrl': 'https://picsum.photos/id/200/300',
+      'title': 'Produk Baru',
+      'subtitle': 'Cek koleksi terbaru kami sekarang!',
+    },
+    {
+      'imageUrl': 'https://picsum.photos/200/300?grayscale',
+      'title': 'Special Event',
+      'subtitle': 'Gabung di event spesial akhir pekan ini!',
+    },
+    {
+      'imageUrl': 'https://picsum.photos/800/400',
+      'title': 'Limited Edition',
+      'subtitle': 'Produk terbatas hanya minggu ini!',
+    },
+  ];
+
+
 }

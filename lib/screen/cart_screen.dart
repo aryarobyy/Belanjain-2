@@ -162,9 +162,22 @@ class _CartScreenState extends State<CartScreen> with SingleTickerProviderStateM
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('Batal')),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(context);
-              // TODO: tambahkan logika pembayaran di sini
+              List<String> selectedIds = selected.map((item) => item.productId).toList();
+              await CartProductService().deleteProducts(_cart!.cartId, selectedIds);
+              showDialog(
+                context: context,
+                builder: (_) => const AlertDialog(
+                title: Text('Sukses'),
+                content: Text(
+                  'Pembayaran Kamu sukses',
+                  ),
+                )
+              );
+              setState(() {
+                _cartProducts.removeWhere((item) => selectedIds.contains(item.productId)); //kosongin product
+              });
             },
             child: const Text('Bayar'),
           ),
