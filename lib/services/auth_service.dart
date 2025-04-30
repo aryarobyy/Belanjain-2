@@ -136,7 +136,8 @@ class AuthService {
   }
 
   Future<UserModel> updateUser(
-      Map<String, dynamic> updatedData, String userId) async {
+      Map<String, dynamic> updatedData,
+      String userId) async {
     try {
       await _firestore.collection(USER_COLLECTION).doc(userId).set(updatedData);
 
@@ -179,4 +180,24 @@ class AuthService {
     }
     throw Exception('User not found');
   }
+
+  Future<bool> isUserExist(String currentUserId) async {
+    print('🔍 isUserExist called with id="$currentUserId"');
+    if (currentUserId.isEmpty) {
+      print('⚠️ userId kosong, langsung return false');
+      return false;
+    }
+    try {
+      print('📡 calling getUserById…');
+      final user = await getUserById(currentUserId);
+      print('✅ getUserById returned: $user');
+      return user != null;
+    } catch (e, st) {
+      print('🚨 Exception in isUserExist: $e');
+      print(st);
+      return false;
+    }
+  }
+
+
 }

@@ -10,6 +10,7 @@ class UserModel {
   final String username;
   final String role;
   final DateTime createdAt;
+  final List<String> itemBought;
 
   UserModel({
     required this.userId,
@@ -19,6 +20,7 @@ class UserModel {
     required this.username,
     required this.role,
     required this.createdAt,
+    required this.itemBought,
   });
 
   factory UserModel.fromMap(Map<String, dynamic> data) {
@@ -26,13 +28,19 @@ class UserModel {
       throw ArgumentError('Email is required');
     }
 
+    final rawList = data['itemBought'];
+    final List<String> items = rawList is List
+        ? rawList.map((e) => e.toString()).toList()
+        : <String>[];
+
     return UserModel(
-      userId: data['id'] ?? "",
-      email: data['email'] ?? "",
-      imageUrl: data['imageUrl'] ?? "",
-      name: data['name'] ?? "",
-      username: data['username'] ?? "",
-      role: data['role'] ?? '',
+      userId: data['id'] as String? ?? '',
+      email: data['email'] as String? ?? '',
+      imageUrl: data['imageUrl'] as String? ?? '',
+      name: data['name'] as String? ?? '',
+      username: data['username'] as String? ?? '',
+      role: data['role'] as String? ?? '',
+      itemBought: items,
       createdAt: data['createdAt'] is Timestamp
           ? (data['createdAt'] as Timestamp).toDate()
           : DateTime.now(),
@@ -47,6 +55,7 @@ class UserModel {
       'name': name,
       'username': username,
       'role': role,
+      'itemBought': itemBought,
       'createdAt': createdAt,
     };
   }
@@ -58,6 +67,7 @@ class UserModel {
     String? name,
     String? role,
     String? username,
+    List<String>? itemBought,
   }) {
     return UserModel(
       userId: userId ?? this.userId,
@@ -66,6 +76,7 @@ class UserModel {
       name: name ?? this.name,
       role: role ?? this.role,
       username: username ?? this.username,
+      itemBought: itemBought ?? this.itemBought,
       createdAt: createdAt,
     );
   }

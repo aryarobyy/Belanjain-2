@@ -26,7 +26,7 @@ class _IndexScreenState extends State<IndexScreen> {
   bool _isSearching = false;
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
-  String _currentUserId = '';
+  String? _currentUserId;
   bool _isCheckingUser = true;
   bool _isUserExist = false;
 
@@ -35,8 +35,8 @@ class _IndexScreenState extends State<IndexScreen> {
   @override
   void initState() {
     super.initState();
-    _currentIndex = widget.initialTab;
     _loadUserAndCheck();
+    _currentIndex = widget.initialTab;
     widgetOptions.addAll([
       MainScreen(inputCategory: 'all', searchQuery: _searchQuery, isSearching: _isSearching),
       // const KameraScreen(),
@@ -45,9 +45,7 @@ class _IndexScreenState extends State<IndexScreen> {
   }
   Future<void> _loadUserAndCheck() async {
     const storage = FlutterSecureStorage();
-    final userId = await storage.read(key: 'uid') as String;
-
-    setState(() => _currentUserId = userId);
+    final String? userId = await storage.read(key: 'uid');
 
     if (userId == null || userId.isEmpty) {
       setState(() {
@@ -56,6 +54,9 @@ class _IndexScreenState extends State<IndexScreen> {
       });
       return;
     }
+    setState(() {
+      _currentUserId = userId;
+    });
 
     final exists = await AuthService().isUserExist(userId);
     setState(() {
@@ -75,6 +76,10 @@ class _IndexScreenState extends State<IndexScreen> {
 
   @override
   Widget build(BuildContext context) {
+    print('Asdfghji ${_isCheckingUser}');
+    print('Asdfghio ${_isUserExist}');
+    print('Asdfghip ${_currentUserId}');
+
     if (_isCheckingUser) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
