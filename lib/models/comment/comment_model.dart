@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class CommentModel {
   final String commentId;
   final String buyerId;
+  final String content;
   final DateTime createdAt;
   final double rating;
 
@@ -10,6 +11,7 @@ class CommentModel {
     required this.commentId,
     required this.buyerId,
     required this.createdAt,
+    required this.content,
     required double rating,
   }) : rating = rating > 5.0 ? 5.0 : rating;
 
@@ -22,6 +24,7 @@ class CommentModel {
     return CommentModel(
       commentId: map['id'] ?? "",
       buyerId: map['buyerId'] ?? "",
+      content: map['content'] ?? "",
       createdAt: map['createdAt'] is Timestamp
           ? (map['createdAt'] as Timestamp).toDate()
           : DateTime.now(),
@@ -33,6 +36,7 @@ class CommentModel {
     return {
       'id': commentId,
       'buyerId': buyerId,
+      'content': content,
       'rating': rating,
       'createdAt': Timestamp.fromDate(createdAt),
     };
@@ -41,6 +45,7 @@ class CommentModel {
   CommentModel copyWith({
     String? commentId,
     String? buyerId,
+    String? content,
     double? rating,
     DateTime? createdAt,
   }) {
@@ -52,6 +57,7 @@ class CommentModel {
     return CommentModel(
       commentId: commentId ?? this.commentId,
       buyerId: buyerId ?? this.buyerId,
+      content: content ?? this.content,
       rating: newRating,
       createdAt: createdAt ?? this.createdAt,
     );
