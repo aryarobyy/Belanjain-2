@@ -12,9 +12,11 @@ class CommentService{
   final PRODUCT_COLLECTION = "products";
   final COMMENT_COLLECTION = "comments";
 
-  Future<CommentModel> postComment(
-      String productId
-      ) async {
+  Future<CommentModel> postComment({
+    required String productId,
+    required String content,
+    required double rating
+  }) async {
     try {
       final String uuid = Uuid().v4();
       final userId = await _storage.read(key: 'uid');
@@ -34,6 +36,8 @@ class CommentService{
       final data = {
         'id': uuid,
         'buyerId': userId,
+        'content': content,
+        'rating': rating,
         'createdAt': Timestamp.fromDate(DateTime.now()),
         'rating': 0,
       };
