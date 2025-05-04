@@ -1,31 +1,24 @@
+import 'package:belanjain/components/colors.dart';
 import 'package:belanjain/components/snackbar.dart';
 import 'package:belanjain/models/product/product_model.dart';
+import 'package:belanjain/models/user_model.dart';
 import 'package:belanjain/screen/cart_screen.dart';
 import 'package:belanjain/screen/index.dart';
 import 'package:belanjain/screen/product/comment_section.dart';
 import 'package:belanjain/services/product/cartProduct_service.dart';
 import 'package:belanjain/services/product/cart_service.dart';
+import 'package:belanjain/widgets/header.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-// Define your app colors here for easy reference
-class AppColors {
-  static const Color primaryColor = Color(0xFF8E24AA); // Purple color
-  static const Color secondaryColor = Color(0xFF4CAF50); // Green color
-  static const Color backgroundColor = Color(0xFFF5F5F5);
-  static const Color textPrimary = Color(0xFF212121);
-  static const Color textSecondary = Color(0xFF757575);
-  static const Color dividerColor = Color(0xFFE0E0E0);
-}
-
 class DetailScreen extends StatefulWidget {
   final ProductModel product;
-  final String userId;
+  UserModel? userData;
 
-  const DetailScreen({
+  DetailScreen({
     super.key,
     required this.product,
-    required this.userId
+    required this.userData
   });
 
   @override
@@ -63,7 +56,7 @@ class _DetailScreenState extends State<DetailScreen> {
 
   Future<void> _insertToCart() async {
     await CartService().postCart();
-    final cart = await CartService().getCartByUserId(widget.userId);
+    final cart = await CartService().getCartByUserId(widget.userData!.userId);
 
     if(cart.cartId.isEmpty) {
       MySnackbar(context, "Terjadi kesalahan saat mengambil data keranjang");
@@ -100,171 +93,141 @@ class _DetailScreenState extends State<DetailScreen> {
     Size screenSize = MediaQuery.of(context).size;
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundColor,
       body: SafeArea(
         child: Column(
             children: [
-        Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        color: AppColors.primaryColor,
-        child: Row(
-          children: [
-            IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.white),
-              onPressed: () {
-                Navigator.pushReplacement(context,
-                    MaterialPageRoute(builder: (_) => const IndexScreen(initialTab: 0)));
-              },
-            ),
-            const Expanded(
-              child: Text(
-                'Detail Produk',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+                MyHeader(
+                    title: widget.product.title,
+                    onTapLeft: (){
+                       Navigator.push(context, MaterialPageRoute(builder: (_) => const IndexScreen(initialTab: 0,)));
+                    }
                 ),
-                textAlign: TextAlign.center,
-              ),
-            ),
-            IconButton(
-              icon: const Icon(Icons.shopping_cart, color: Colors.white),
-              onPressed: () {
-                Navigator.pushReplacement(context,
-                    MaterialPageRoute(builder: (_) => CartScreen(userId: widget.userId)));
-              },
-            ),
-          ],
-        ),
-      ),
-
-      Expanded(
-        child: ListView(
-          controller: _scrollController,
-          children: [
-            if (widget.product.imageUrl.isNotEmpty)
-              const SizedBox(height: 14,),
-              Container(
-                width: double.infinity,
-                height: 300,
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                ),
-                child: widget.product.imageUrl.isNotEmpty
-                    ? Image.network(
-                  widget.product.imageUrl,
-                  fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) =>
-                  const Center(child: Icon(Icons.image_not_supported, size: 80, color: Colors.grey)),
-                )
-                    : const Center(child: Icon(Icons.image_not_supported, size: 80, color: Colors.grey)),
-              ),
-
-            Container(
-              padding: const EdgeInsets.all(16),
-              color: Colors.white,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              Expanded(
+                child: ListView(
+                controller: _scrollController,
                 children: [
-                  Text(
-                    _title,
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
+                  if (widget.product.imageUrl.isNotEmpty)
+                    const SizedBox(height: 14,),
+                    Container(
+                      width: double.infinity,
+                      height: 300,
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                      ),
+                      child: widget.product.imageUrl.isNotEmpty
+                          ? Image.network(
+                        widget.product.imageUrl,
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) =>
+                        const Center(child: Icon(Icons.image_not_supported, size: 80, color: Colors.grey)),
+                      )
+                          : const Center(child: Icon(Icons.image_not_supported, size: 80, color: Colors.grey)),
                     ),
-                  ),
 
-                  const SizedBox(height: 8),
-
-                  Text(
-                    "Rp ${formatCurrency.format(_price)}",
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.secondaryColor,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  Wrap(
-                    children: [
-                      Chip(
-                        label: Text(
-                          category,
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    color: Colors.white,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _title,
                           style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
                           ),
                         ),
-                        backgroundColor: AppColors.primaryColor,
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                      ),
-                      const SizedBox(width: 8),
-                      Chip(
-                        label: Text(
-                          "Stock: $_stock",
+                        const SizedBox(height: 8),
+
+                        Text(
+                          "Rp ${formatCurrency.format(_price)}",
                           style: const TextStyle(
-                            color: Colors.black87,
-                            fontSize: 12,
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.green,
                           ),
                         ),
-                        backgroundColor: Colors.grey[200],
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        const SizedBox(height: 16),
+
+                        Wrap(
+                          children: [
+                            Chip(
+                              label: Text(
+                                category,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                ),
+                              ),
+                              backgroundColor: primaryColor,
+                              padding: const EdgeInsets.symmetric(horizontal: 8),
+                            ),
+                            const SizedBox(width: 8),
+                            Chip(
+                              label: Text(
+                                "Stock: $_stock",
+                                style: const TextStyle(
+                                  color: Colors.black87,
+                                  fontSize: 12,
+                                ),
+                              ),
+                              backgroundColor: Colors.grey[200],
+                              padding: const EdgeInsets.symmetric(horizontal: 8),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    color: Colors.white,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          "Description",
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        const Divider(),
+                        const SizedBox(height: 8),
+                        Text(
+                          _description,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: Colors.black,
+                            height: 1.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    color: Colors.white,
+                    child: SizedBox(
+                      height: 200,
+                      child: CommentSection(
+                        userData: widget.userData!,
+                        product: widget.product,
                       ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 8),
-
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              color: Colors.white,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    "Description",
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  const Divider(),
-                  const SizedBox(height: 8),
-                  Text(
-                    _description,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: AppColors.textSecondary,
-                      height: 1.5,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 8),
 
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              color: Colors.white,
-              child: SizedBox(
-                height: 200,
-                child: CommentSection(
-                  userId: widget.userId,
-                  productId: widget.product.productId,
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 80),
-            ],
+                  const SizedBox(height: 80),
+                  ],
            ),
          ),
         ],
@@ -288,13 +251,12 @@ class _DetailScreenState extends State<DetailScreen> {
           child: _isAdd
               ? Row(
             children: [
-              // Quantity Selector
               Expanded(
                 flex: 2,
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    border: Border.all(color: AppColors.dividerColor),
+                    border: Border.all(color: primaryColor),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(
@@ -302,6 +264,9 @@ class _DetailScreenState extends State<DetailScreen> {
                     children: [
                       IconButton(
                         onPressed: () {
+                          if(_amount < 1){
+                            _isAdd = false;
+                          }
                           if (_amount > 1) {
                             setState(() => _amount--);
                           }
@@ -320,7 +285,7 @@ class _DetailScreenState extends State<DetailScreen> {
                             setState(() => _amount++);
                           }
                         },
-                        icon: const Icon(Icons.add_circle, color: AppColors.secondaryColor),
+                        icon: const Icon(Icons.add_circle, color: secondaryColor),
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(),
                       ),
@@ -334,7 +299,7 @@ class _DetailScreenState extends State<DetailScreen> {
                 child: ElevatedButton(
                   onPressed: _insertToCart,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryColor,
+                    backgroundColor: primaryColor,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(
@@ -374,7 +339,7 @@ class _DetailScreenState extends State<DetailScreen> {
                   icon: const Icon(Icons.shopping_cart_outlined),
                   label: const Text("Beli Sekarang"),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryColor,
+                    backgroundColor: primaryColor,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 12),
                   ),

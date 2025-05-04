@@ -1,13 +1,22 @@
+import 'package:belanjain/components/colors.dart';
+import 'package:belanjain/models/comment/comment_model.dart';
+import 'package:belanjain/models/product/product_model.dart';
+import 'package:belanjain/models/user_model.dart';
+import 'package:belanjain/screen/comment/add_comment.dart';
+import 'package:belanjain/screen/comment/comment_screen.dart';
+import 'package:belanjain/services/auth_service.dart';
 import 'package:belanjain/services/comment/comment_service.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class CommentSection extends StatefulWidget {
-  final String userId;
-  final String productId;
+  final UserModel? userData;
+  final ProductModel product;
+
   const CommentSection({
     super.key,
-    required this.userId,
-    required this.productId,
+    required this.userData,
+    required this.product,
   });
 
   @override
@@ -16,13 +25,73 @@ class CommentSection extends StatefulWidget {
 
 class _CommentSectionState extends State<CommentSection> {
   final TextEditingController _contentController = TextEditingController();
+  bool showAllComments = false;
+  final FlutterSecureStorage _storage = FlutterSecureStorage();
+  String role = '';
+  bool hasBoughtProduct = false;
 
-  void _handlePostComment( ) async {
-    await CommentService().postComment(
-      productId: widget.productId,
-      content: _contentController.text.trim(),
-      rating: 0,
-    );
+  Widget _buildRatingStars(double rating) {
+    const maxStars = 5;
+    final fullStars = rating.floor();
+    final hasHalfStar = (rating - fullStars) >= 0.5;
+    final emptyStars = maxStars - fullStars - (hasHalfStar ? 1 : 0);
+
+    List<Widget> stars = [];
+
+    for (var i = 0; i < fullStars; i++) {
+      stars.add(const Icon(Icons.star, size: 16));
+    }
+    if (hasHalfStar) {
+      stars.add(const Icon(Icons.star_half, size: 16));
+    }
+    for (var i = 0; i < emptyStars; i++) {
+      stars.add(const Icon(Icons.star_border, size: 16));
+    }
+
+    return Row(children: stars);
+  }
+
+  void _getRole() async {
+    final userRole = await _storage.read(key: 'role');
+    if (userRole != null) {
+      setState(() {
+        role = userRole;
+      });
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _getRole();
+    _checkIfProductIsBought();
+  }
+
+  void _checkIfProductIsBought() {
+    if (widget.userData != null) {
+      final boughtList = widget.userData!.itemBought ?? [];
+      final productId = widget.product.productId;
+      final isBought = boughtList.contains(productId);
+
+      setState(() {
+        hasBoughtProduct = isBought;
+      });
+
+      print("HAS BOUGHT PRODUCT: $hasBoughtProduct");
+      print("BOUGHT LIST: $boughtList");
+      print("PRODUCT ID: $productId");
+    } else {
+      print("USER DATA IS NULL");
+    }
+  }
+
+  @override
+  void didUpdateWidget(CommentSection oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Re-check purchased status if userData changes
+    if (widget.userData != oldWidget.userData) {
+      _checkIfProductIsBought();
+    }
   }
 
   @override
@@ -30,55 +99,160 @@ class _CommentSectionState extends State<CommentSection> {
     return Column(
       children: [
         Expanded(
-          child: ListView.builder(
-            itemCount: dummyComments.length,
-            itemBuilder: (BuildContext context, int index) {
-              final comment = dummyComments[index];
-              return ListTile(
-                leading: const Icon(
-                  Icons.person,
-                  size: 40,
-                ),
-                title: Text(
-                  comment['username'] ?? '',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                subtitle: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(
-                      Icons.star,
-                      size: 12,
-                    ),
-                    SizedBox(height: 4),
-                    Text(comment['message1'] ?? ''),
-                    SizedBox(height: 5,),
-                    Text("Reply")
-                  ],
-                ),
-              );
-            },
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Row(
+          child: Column(
             children: [
               Expanded(
-                child: TextField(
-                  decoration: InputDecoration(
-                    hintText: 'Add a comment...',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
+                child: FutureBuilder<List<CommentModel>>(
+                  future: CommentService().getCommentsByProduct(widget.product.productId),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    if (snapshot.hasError) {
+                      return Center(child: Text('Error: ${snapshot.error}'));
+                    }
+                    final comments = snapshot.data!;
+                    if (comments.isEmpty) {
+                      return Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Text('Belum ada komentar'),
+                            if (hasBoughtProduct)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 16.0),
+                                child: ElevatedButton(
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => CommentScreen(
+                                          product: widget.product,
+                                          userData: widget.userData,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                  child: const Text("Tambahkan Komentar"),
+                                ),
+                              ),
+                          ],
+                        ),
+                      );
+                    }
+
+                    return Column(
+                      children: [
+                        Expanded(
+                          child: ListView.builder(
+                            padding: const EdgeInsets.all(8.0),
+                            itemCount: comments.length,
+                            itemBuilder: (context, index) {
+                              final comment = comments[index];
+                              return ListTile(
+                                leading: FutureBuilder<UserModel>(
+                                  future: AuthService().getUserById(comment.buyerId!),
+                                  builder: (ctx, userSnap) {
+                                    if (userSnap.connectionState == ConnectionState.waiting) {
+                                      return const CircleAvatar(child: CircularProgressIndicator());
+                                    }
+                                    if (userSnap.hasError || userSnap.data == null) {
+                                      return const CircleAvatar(child: Icon(Icons.error));
+                                    }
+                                    return CircleAvatar(
+                                      backgroundImage: NetworkImage(userSnap.data!.imageUrl),
+                                    );
+                                  },
+                                ),
+                                title: FutureBuilder<UserModel>(
+                                  future: AuthService().getUserById(comment.buyerId!),
+                                  builder: (ctx, userSnap) {
+                                    if (userSnap.connectionState == ConnectionState.waiting) {
+                                      return const Text('Loading...');
+                                    }
+                                    if (userSnap.hasError || userSnap.data == null) {
+                                      return const Text('Unknown User');
+                                    }
+                                    return Text(
+                                      userSnap.data!.name,
+                                      style: const TextStyle(fontWeight: FontWeight.bold),
+                                    );
+                                  },
+                                ),
+                                subtitle: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    _buildRatingStars(comment.rating),
+                                    const SizedBox(height: 4),
+                                    Text(comment.content ?? ''),
+                                    if (role == 'seller')
+                                      TextButton(
+                                        onPressed: () {},
+                                        child: const Text('Reply'),
+                                      ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                        if (hasBoughtProduct)
+                          Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child:ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: primaryColor,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                elevation: 3,
+                                textStyle: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => AddComment(productId: widget.product.productId)
+                                  ),
+                                );
+                              },
+                              child: const Text("Tambahkan Komentar"),
+                            ),
+                          ),
+
+                        if (comments.length > 2 && !showAllComments)
+                          InkWell(
+                            onTap: () {
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => CommentScreen(
+                                    product: widget.product,
+                                    userData: widget.userData,
+                                  ),
+                                ),
+                              );
+                            },
+                            child: const Padding(
+                              padding: EdgeInsets.all(8.0),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.arrow_drop_down),
+                                  Text("Selengkapnya"),
+                                ],
+                              ),
+                            ),
+                          ),
+                      ],
+                    );
+                  },
                 ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.send),
-                onPressed: () {
-                  // Handle send comment
-                },
               ),
             ],
           ),
@@ -86,27 +260,4 @@ class _CommentSectionState extends State<CommentSection> {
       ],
     );
   }
-
-  final List<Map<String, String>> dummyComments = [
-    {
-      'username': 'Roby Aryanata',
-      'date': 'Oct 2, 2024',
-      'message1': 'Gimana ini 1 bulan baru sampe',
-      'message2': 'You can add builder with map instead of list',
-    },
-    {
-      'username': 'Firman',
-      'date': 'Oct 3, 2024',
-      'message1': 'Delicious',
-      'message2': 'Helped me a lot with my project.',
-    },
-    {
-      'username': 'Obud Item',
-      'date': 'Oct 4, 2024',
-      'message1': 'Enak',
-      'message2': 'Looking forward to more content.',
-    },
-  ];
-
-
 }
