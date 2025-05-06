@@ -24,11 +24,11 @@ class CommentSection extends StatefulWidget {
 }
 
 class _CommentSectionState extends State<CommentSection> {
-  final TextEditingController _contentController = TextEditingController();
   bool showAllComments = false;
   final FlutterSecureStorage _storage = FlutterSecureStorage();
   String role = '';
   bool hasBoughtProduct = false;
+  String _buyerId = '';
 
   Widget _buildRatingStars(double rating) {
     const maxStars = 5;
@@ -38,14 +38,25 @@ class _CommentSectionState extends State<CommentSection> {
 
     List<Widget> stars = [];
 
-    for (var i = 0; i < fullStars; i++) {
-      stars.add(const Icon(Icons.star, size: 16));
+    for (var i = 0; i < emptyStars; i++) {
+      stars.add(const Icon(
+        Icons.star, size: 16,
+        color: goldColor,
+      ));
     }
     if (hasHalfStar) {
-      stars.add(const Icon(Icons.star_half, size: 16));
+      stars.add(const Icon(
+        Icons.star_half,
+        size: 16,
+        color: goldColor,
+      ));
     }
-    for (var i = 0; i < emptyStars; i++) {
-      stars.add(const Icon(Icons.star_border, size: 16));
+    for (var i = 0; i < fullStars; i++) {
+      stars.add(const Icon(
+        Icons.star_border,
+        size: 16,
+        color: goldColor,
+      ));
     }
 
     return Row(children: stars);
@@ -77,9 +88,6 @@ class _CommentSectionState extends State<CommentSection> {
         hasBoughtProduct = isBought;
       });
 
-      print("HAS BOUGHT PRODUCT: $hasBoughtProduct");
-      print("BOUGHT LIST: $boughtList");
-      print("PRODUCT ID: $productId");
     } else {
       print("USER DATA IS NULL");
     }
@@ -88,7 +96,6 @@ class _CommentSectionState extends State<CommentSection> {
   @override
   void didUpdateWidget(CommentSection oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Re-check purchased status if userData changes
     if (widget.userData != oldWidget.userData) {
       _checkIfProductIsBought();
     }
@@ -121,20 +128,34 @@ class _CommentSectionState extends State<CommentSection> {
                             if (hasBoughtProduct)
                               Padding(
                                 padding: const EdgeInsets.only(top: 16.0),
-                                child: ElevatedButton(
-                                  onPressed: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) => CommentScreen(
-                                          product: widget.product,
-                                          userData: widget.userData,
-                                        ),
+                                child:
+                                  ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: primaryColor,
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
                                       ),
-                                    );
-                                  },
-                                  child: const Text("Tambahkan Komentar"),
-                                ),
+                                      elevation: 3,
+                                      textStyle: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    onPressed: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) => AddComment(
+                                            product: widget.product,
+                                            userData: widget.userData!,
+                                          )
+                                        ),
+                                      );
+                                    },
+                                    child: const Text("Tambahkan Komentar"),
+                                  ),
                               ),
                           ],
                         ),
@@ -149,6 +170,7 @@ class _CommentSectionState extends State<CommentSection> {
                             itemCount: comments.length,
                             itemBuilder: (context, index) {
                               final comment = comments[index];
+                              _buyerId = comment.buyerId;
                               return ListTile(
                                 leading: FutureBuilder<UserModel>(
                                   future: AuthService().getUserById(comment.buyerId!),
@@ -196,35 +218,38 @@ class _CommentSectionState extends State<CommentSection> {
                             },
                           ),
                         ),
-                        if (hasBoughtProduct)
-                          Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child:ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: primaryColor,
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                elevation: 3,
-                                textStyle: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                        if(!comments.contains(_buyerId))
+                        Padding(
+                          padding: const EdgeInsets.only(top: 16.0),
+                          child:
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: primaryColor,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
                               ),
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => AddComment(productId: widget.product.productId)
-                                  ),
-                                );
-                              },
-                              child: const Text("Tambahkan Komentar"),
+                              elevation: 3,
+                              textStyle: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (_) => AddComment(
+                                      product: widget.product,
+                                      userData: widget.userData!,
+                                    )
+                                ),
+                              );
+                            },
+                            child: const Text("Tambahkan Komentar"),
                           ),
-
+                        ),
                         if (comments.length > 2 && !showAllComments)
                           InkWell(
                             onTap: () {

@@ -42,10 +42,10 @@ class CommentService{
         'rating': 0,
       };
 
-      await _firestore.collection(COMMENT_COLLECTION).doc(uuid).set(data);
+      await _firestore.collection(PRODUCT_COLLECTION).doc(productId).collection(COMMENT_COLLECTION).doc(uuid).set(data);
 
       final newCart =
-      await _firestore.collection(COMMENT_COLLECTION).doc(uuid).get();
+      await _firestore.collection(PRODUCT_COLLECTION).doc(productId).collection(COMMENT_COLLECTION).doc(uuid).get();
 
       if (!newCart.exists) {
         throw Exception("Gagal menyimpan cart baru.");
@@ -86,9 +86,11 @@ class CommentService{
   }
 
 
-  Future<CommentModel> getSpecificReply(String commentId,String replyId) async {
+  Future<CommentModel> getSpecificReply(String commentId,String replyId, String productId) async {
     final replyData =
     await _firestore
+        .collection(PRODUCT_COLLECTION)
+        .doc(productId)
         .collection(COMMENT_COLLECTION)
         .doc(commentId)
         .get();

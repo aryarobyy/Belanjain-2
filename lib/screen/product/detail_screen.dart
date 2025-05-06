@@ -4,7 +4,7 @@ import 'package:belanjain/models/product/product_model.dart';
 import 'package:belanjain/models/user_model.dart';
 import 'package:belanjain/screen/cart_screen.dart';
 import 'package:belanjain/screen/index.dart';
-import 'package:belanjain/screen/product/comment_section.dart';
+import 'package:belanjain/screen/comment/comment_section.dart';
 import 'package:belanjain/services/product/cartProduct_service.dart';
 import 'package:belanjain/services/product/cart_service.dart';
 import 'package:belanjain/widgets/header.dart';
