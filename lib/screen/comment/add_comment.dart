@@ -59,6 +59,7 @@ class _AddCommentState extends State<AddComment> with WidgetsBindingObserver {
     });
 
     try {
+
       await CommentService().postComment(
         productId: widget.product.productId,
         content: _contentController.text,
@@ -66,13 +67,13 @@ class _AddCommentState extends State<AddComment> with WidgetsBindingObserver {
       );
 
       Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-              builder: (builder) => DetailScreen(
-                  product: widget.product,
-                  userData: widget.userData
-              )
+        context,
+        MaterialPageRoute(
+          builder: (builder) => DetailScreen(
+            product: widget.product,
+            userData: widget.userData
           )
+        )
       );
     } catch (e) {
       setState(() {
@@ -110,7 +111,6 @@ class _AddCommentState extends State<AddComment> with WidgetsBindingObserver {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Product info card
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
@@ -197,8 +197,10 @@ class _AddCommentState extends State<AddComment> with WidgetsBindingObserver {
                       child: Column(
                         children: [
                           VolumeSelector(
+                            initialValue: _selectedValue,
                             onChanged: (value) {
                               setState(() {
+                                print("Rating dipilih: $value");
                                 _selectedValue = value;
                               });
                             },

@@ -39,7 +39,6 @@ class CommentService{
         'content': content,
         'rating': rating,
         'createdAt': Timestamp.fromDate(DateTime.now()),
-        'rating': 0,
       };
 
       await _firestore.collection(PRODUCT_COLLECTION).doc(productId).collection(COMMENT_COLLECTION).doc(uuid).set(data);

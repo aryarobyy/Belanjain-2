@@ -38,7 +38,7 @@ class _CommentSectionState extends State<CommentSection> {
 
     List<Widget> stars = [];
 
-    for (var i = 0; i < emptyStars; i++) {
+    for (var i = 0; i < fullStars; i++) {
       stars.add(const Icon(
         Icons.star, size: 16,
         color: goldColor,
@@ -51,7 +51,7 @@ class _CommentSectionState extends State<CommentSection> {
         color: goldColor,
       ));
     }
-    for (var i = 0; i < fullStars; i++) {
+    for (var i = 0; i < emptyStars; i++) {
       stars.add(const Icon(
         Icons.star_border,
         size: 16,
