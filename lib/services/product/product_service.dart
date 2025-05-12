@@ -16,6 +16,7 @@
       required double stock,
       required String desc,
       required String imageUrl,
+      required String sellerId,
       String? rating,
       String? status
   }) async {
@@ -25,6 +26,7 @@
         final data = {
           'id' : uuid,
           'title': title,
+          'sellerId': sellerId,
           'category': category.value,
           'price': price,
           'stock': stock,
@@ -61,7 +63,7 @@
       }
     }
 
-    Future<ProductModel> getProductsById(String productId) async {
+    Future<ProductModel> getProductById(String productId) async {
       final docSnapshot = await _firestore
           .collection(PRODUCT_COLLECTION)
           .doc(productId)
@@ -73,6 +75,25 @@
       }
       return ProductModel.fromMap(data);
     }
+
+    Future<List<ProductModel>> getProductBySellerId(String sellerId) async {
+      final querySnapshot = await _firestore
+          .collection(PRODUCT_COLLECTION)
+          .where('sellerId', isEqualTo: sellerId)
+          .get();
+
+      if (querySnapshot.docs.isEmpty) {
+        throw Exception("No products found for seller $sellerId");
+      }
+
+      final products = querySnapshot.docs.map((doc) {
+        final data = doc.data();
+        return ProductModel.fromMap(data);
+      }).toList();
+
+      return products;
+    }
+
 
     Future<ProductModel> updateProduct(Map<String, dynamic> updatedData, String productId) async {
       try {
@@ -94,5 +115,24 @@
       } catch (e) {
         throw Exception(e);
       }
+    }
+
+    Future<double> getProductRating(String productId) async {
+      final querySnapshot = await _firestore
+          .collection(PRODUCT_COLLECTION)
+          .doc(productId)
+          .collection("comments")
+          .where('rating', isGreaterThan: 0)
+          .get();
+
+      final ratings = querySnapshot.docs
+          .map((doc) => doc['rating'])
+          .whereType<num>()
+          .toList();
+
+      if (ratings.isEmpty) return 0.0;
+
+      final total = ratings.fold<double>(0.0, (sum, rating) => sum + rating);
+      return double.parse((total / ratings.length).toStringAsFixed(1));
     }
   }

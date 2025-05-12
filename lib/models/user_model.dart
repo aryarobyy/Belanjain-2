@@ -11,6 +11,7 @@ class UserModel {
   final String role;
   final DateTime createdAt;
   final List<String> itemBought;
+  final List<String> productStored;
 
   UserModel({
     required this.userId,
@@ -21,6 +22,7 @@ class UserModel {
     required this.role,
     required this.createdAt,
     required this.itemBought,
+    required this.productStored,
   });
 
   factory UserModel.fromMap(Map<String, dynamic> data) {
@@ -28,9 +30,14 @@ class UserModel {
       throw ArgumentError('Email is required');
     }
 
-    final rawList = data['itemBought'];
-    final List<String> items = rawList is List
-        ? rawList.map((e) => e.toString()).toList()
+    final rawItemist = data['itemBought'];
+    final List<String> items1 = rawItemist is List
+        ? rawItemist.map((e) => e.toString()).toList()
+        : <String>[];
+
+    final rawProductList = data['productStored'];
+    final List<String> items2 = rawProductList is List
+        ? rawProductList.map((e) => e.toString()).toList()
         : <String>[];
 
     return UserModel(
@@ -40,7 +47,8 @@ class UserModel {
       name: data['name'] as String? ?? '',
       username: data['username'] as String? ?? '',
       role: data['role'] as String? ?? '',
-      itemBought: items,
+      itemBought: items1,
+      productStored: items2,
       createdAt: data['createdAt'] is Timestamp
           ? (data['createdAt'] as Timestamp).toDate()
           : DateTime.now(),
@@ -56,6 +64,7 @@ class UserModel {
       'username': username,
       'role': role,
       'itemBought': itemBought,
+      'productStored': productStored,
       'createdAt': createdAt,
     };
   }
@@ -68,6 +77,7 @@ class UserModel {
     String? role,
     String? username,
     List<String>? itemBought,
+    List<String>? productStored,
   }) {
     return UserModel(
       userId: userId ?? this.userId,
@@ -77,6 +87,7 @@ class UserModel {
       role: role ?? this.role,
       username: username ?? this.username,
       itemBought: itemBought ?? this.itemBought,
+      productStored: productStored ?? this.productStored,
       createdAt: createdAt,
     );
   }
