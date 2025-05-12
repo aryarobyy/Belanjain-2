@@ -139,7 +139,7 @@ class AuthService {
       Map<String, dynamic> updatedData,
       String userId) async {
     try {
-      await _firestore.collection(USER_COLLECTION).doc(userId).set(updatedData);
+      await _firestore.collection(USER_COLLECTION).doc(userId).set(updatedData, SetOptions(merge: true));
 
       final DocumentSnapshot userDoc =
           await _firestore.collection(USER_COLLECTION).doc(userId).get();

@@ -4,7 +4,10 @@ import 'package:belanjain/components/button.dart';
 import 'package:belanjain/components/snackbar.dart';
 import 'package:belanjain/components/text_field.dart';
 import 'package:belanjain/models/product/category.dart';
+import 'package:belanjain/models/user_model.dart';
+import 'package:belanjain/screen/index.dart';
 import 'package:belanjain/screen/main_screen.dart';
+import 'package:belanjain/services/auth_service.dart';
 import 'package:belanjain/services/image_service.dart';
 import 'package:belanjain/services/product/product_service.dart';
 import 'package:belanjain/widgets/header.dart';
@@ -12,7 +15,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 class AddProduct extends StatefulWidget {
-  const AddProduct({Key? key}) : super(key: key);
+  final UserModel sellerData;
+
+  const AddProduct({Key? key, required this.sellerData}) : super(key: key);
 
   @override
   State<AddProduct> createState() => _AddProductState();
@@ -54,6 +59,7 @@ class _AddProductState extends State<AddProduct> with WidgetsBindingObserver {
   }
 
   void _handlePostProduct() async {
+    UserModel _sellerData = widget.sellerData;
     try {
       if (_titleController.text.isEmpty ||
           _priceController.text.isEmpty ||
@@ -64,27 +70,38 @@ class _AddProductState extends State<AddProduct> with WidgetsBindingObserver {
         return;
       }
 
+      setState(() => _isSubmitted = true);
+
       final stock = double.parse(_stockController.text.trim());
       final status = stock > 1 ? 'ready' : 'Out of Stock';
 
-      await ProductService().postProduct(
+      final productPosted = await ProductService().postProduct(
+        sellerId: _sellerData.userId,
         title: _titleController.text.trim(),
         category: _selectedCategory,
         price: double.parse(_priceController.text.trim()),
         stock: stock,
         desc: _descController.text.trim(),
         imageUrl: _imgUrl!,
-        status: 'ready',
+        status: status,
       );
 
-      _isSubmitted = true; // Tandai bahwa produk telah dikirim
+      await AuthService().updateUser({
+        "productStored": productPosted.productId},
+        _sellerData.userId
+      );
 
       Navigator.pushReplacement(
-          context, MaterialPageRoute(builder: (builder) => MainScreen()));
+        context,
+        MaterialPageRoute(builder: (context) => MainScreen()),
+      );
     } catch (e) {
-      print("Tidak bisa posting produk");
+      MySnackbar(context, "Gagal posting: ${e.toString()}");
+    } finally {
+      setState(() => _isSubmitted = false);
     }
   }
+
 
   void _handleUploadImage() async {
     try {
@@ -105,11 +122,11 @@ class _AddProductState extends State<AddProduct> with WidgetsBindingObserver {
           children: [
             MyHeader(
               title: "Tambah Produk",
-              onTap: () {
+              onTapLeft: () {
                 Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(
-                    builder: (builder) => const MainScreen(),
+                    builder: (builder) => const IndexScreen(),
                   ),
                 );
               },

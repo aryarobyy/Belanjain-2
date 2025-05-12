@@ -1,13 +1,16 @@
 
 import 'package:belanjain/components/colors.dart';
+import 'package:belanjain/models/user_model.dart';
 import 'package:belanjain/screen/auth/auth.dart';
 import 'package:belanjain/screen/cart_screen.dart';
+import 'package:belanjain/screen/product/add_product.dart';
+import 'package:belanjain/screen/profile/seller_profile.dart';
 import 'package:belanjain/services/auth_service.dart';
 import 'package:belanjain/services/product/cart_service.dart';
 import 'package:flutter/material.dart';
 import 'main_screen.dart';
 import 'kamera_screen.dart';
-import 'profile_screen.dart';
+import 'profile/user_profile.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class IndexScreen extends StatefulWidget {
@@ -26,9 +29,9 @@ class _IndexScreenState extends State<IndexScreen> {
   bool _isSearching = false;
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
-  String? _currentUserId;
   bool _isCheckingUser = true;
   bool _isUserExist = false;
+  UserModel? _currUserData;
 
   final List<Widget> widgetOptions = [];
 
@@ -37,12 +40,8 @@ class _IndexScreenState extends State<IndexScreen> {
     super.initState();
     _loadUserAndCheck();
     _currentIndex = widget.initialTab;
-    widgetOptions.addAll([
-      MainScreen(inputCategory: 'all', searchQuery: _searchQuery, isSearching: _isSearching),
-      // const KameraScreen(),
-      const ProfileScreen(),
-    ]);
   }
+
   Future<void> _loadUserAndCheck() async {
     const storage = FlutterSecureStorage();
     final String? userId = await storage.read(key: 'uid');
@@ -54,14 +53,21 @@ class _IndexScreenState extends State<IndexScreen> {
       });
       return;
     }
-    setState(() {
-      _currentUserId = userId;
-    });
 
     final exists = await AuthService().isUserExist(userId);
+
+    final userData = await AuthService().getUserById(userId);
     setState(() {
+      _currUserData = userData;
       _isUserExist = exists;
       _isCheckingUser = false;
+
+      widgetOptions.clear();
+      widgetOptions.addAll([
+        MainScreen(inputCategory: 'all', searchQuery: _searchQuery, isSearching: _isSearching),
+        // const KameraScreen(),
+        SellerProfile(userId: _currUserData!.userId,),
+      ]);
     });
   }
 
@@ -76,10 +82,6 @@ class _IndexScreenState extends State<IndexScreen> {
 
   @override
   Widget build(BuildContext context) {
-    print('Asdfghji ${_isCheckingUser}');
-    print('Asdfghio ${_isUserExist}');
-    print('Asdfghip ${_currentUserId}');
-
     if (_isCheckingUser) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
@@ -132,12 +134,12 @@ class _IndexScreenState extends State<IndexScreen> {
           IconButton(
               icon: const Icon(Icons.shopping_cart_outlined),
               onPressed: () {
-                if (_currentUserId != null) {
+                if (_currUserData?.userId != null) {
                   CartService().postCart();
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                        builder: (_) => CartScreen(userId: _currentUserId!)),
+                      builder: (_) => CartScreen(userId: _currUserData!.userId)),
                   );
                 }
               }),
@@ -179,23 +181,31 @@ class _IndexScreenState extends State<IndexScreen> {
                 Navigator.pop(context);
               },
             ),
+            if (_currUserData?.role == 'seller')
+              ListTile(
+                leading: const Icon(Icons.add_box),
+                title: const Text('Add Product'),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => AddProduct(sellerData: _currUserData!)), // sesuaikan
+                  );
+                },
+              ),
             ListTile(
               leading: const Icon(Icons.logout),
               title: const Text('Logout'),
               onTap: () async {
                 const storage = FlutterSecureStorage();
                 await storage.delete(key: 'uid');
-                Navigator.of(context).popUntil((r) => r.isFirst);
+                Navigator.push(context, MaterialPageRoute(builder: (_) => AuthScreen()));
               },
             ),
           ],
         ),
       ),
-      body: MainScreen(
-        inputCategory: 'all',
-        searchQuery: _searchQuery,
-        isSearching: _isSearching,
-      ),
+      body: widgetOptions[_currentIndex]
     );
   }
 
