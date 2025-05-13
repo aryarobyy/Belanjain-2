@@ -9,6 +9,7 @@ class UserModel {
   final String imageUrl;
   final String username;
   final String role;
+  final String bio;
   final DateTime createdAt;
   final List<String> itemBought;
   final List<String> productStored;
@@ -20,6 +21,7 @@ class UserModel {
     required this.imageUrl,
     required this.username,
     required this.role,
+    required this.bio,
     required this.createdAt,
     required this.itemBought,
     required this.productStored,
@@ -47,6 +49,7 @@ class UserModel {
       name: data['name'] as String? ?? '',
       username: data['username'] as String? ?? '',
       role: data['role'] as String? ?? '',
+      bio: data['bio'] as String? ?? '',
       itemBought: items1,
       productStored: items2,
       createdAt: data['createdAt'] is Timestamp
@@ -63,6 +66,7 @@ class UserModel {
       'name': name,
       'username': username,
       'role': role,
+      'bio': bio,
       'itemBought': itemBought,
       'productStored': productStored,
       'createdAt': createdAt,
@@ -75,6 +79,7 @@ class UserModel {
     String? imageUrl,
     String? name,
     String? role,
+    String? bio,
     String? username,
     List<String>? itemBought,
     List<String>? productStored,
@@ -85,6 +90,7 @@ class UserModel {
       imageUrl: imageUrl ?? this.imageUrl,
       name: name ?? this.name,
       role: role ?? this.role,
+      bio: bio ?? this.bio,
       username: username ?? this.username,
       itemBought: itemBought ?? this.itemBought,
       productStored: productStored ?? this.productStored,
