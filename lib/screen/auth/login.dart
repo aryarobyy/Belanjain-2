@@ -35,7 +35,7 @@ class _LoginState extends State<Login> {
             );
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(builder: (context) => const MainScreen(inputCategory: "all")),
+              MaterialPageRoute(builder: (context) => const IndexScreen(initialTab: 0,)),
             );
           }
 
@@ -108,9 +108,9 @@ class _LoginState extends State<Login> {
                       const SizedBox(height: 16),
                       _isLoading
                           ? const CircularProgressIndicator()
-                          : ElevatedButton(
+                          : MyButton(
                         onPressed: _isLoading ? null : _submitForm,
-                        child: const Text("Login"),
+                        text: "Login",
                       ),
                       const SizedBox(height: 16),
                       Row(
