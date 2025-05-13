@@ -1,9 +1,12 @@
+import 'package:belanjain/components/button.dart';
 import 'package:belanjain/components/colors.dart';
 import 'package:belanjain/components/snackbar.dart';
 import 'package:belanjain/models/cartProduct_model.dart';
 import 'package:belanjain/models/cart_model.dart';
 import 'package:belanjain/models/product/product_model.dart';
+import 'package:belanjain/screen/index.dart';
 import 'package:belanjain/screen/main_screen.dart';
+import 'package:belanjain/services/auth_service.dart';
 import 'package:belanjain/services/product/cartProduct_service.dart';
 import 'package:belanjain/services/product/cart_service.dart';
 import 'package:belanjain/services/product/product_service.dart';
@@ -62,7 +65,7 @@ class _CartScreenState extends State<CartScreen> with SingleTickerProviderStateM
 
   Future<ProductModel?> _getProductDetail(String productId) async {
     try {
-      return await ProductService().getProductsById(productId);
+      return await ProductService().getProductById(productId);
     } catch (e) {
       print("Error loading product detail: $e");
       return null;
@@ -164,19 +167,32 @@ class _CartScreenState extends State<CartScreen> with SingleTickerProviderStateM
           TextButton(
             onPressed: () async {
               Navigator.pop(context);
-              List<String> selectedIds = selected.map((item) => item.productId).toList();
+
+              List<String> selectedIds = selected
+                .map((item) => item.productId.toString())
+                .toList();
+
               await CartProductService().deleteProducts(_cart!.cartId, selectedIds);
+
+              final user = await AuthService().getUserById(_cart!.buyerId);
+
+              List<String> currentBought = List<String>.from(user.itemBought);
+              currentBought.addAll(selectedIds);
+
+              await AuthService().updateUser({
+                "itemBought": currentBought,
+              }, _cart!.buyerId);
+
               showDialog(
                 context: context,
                 builder: (_) => const AlertDialog(
-                title: Text('Sukses'),
-                content: Text(
-                  'Pembayaran Kamu sukses',
-                  ),
-                )
+                  title: Text('Sukses'),
+                  content: Text('Pembayaran Kamu sukses'),
+                ),
               );
+
               setState(() {
-                _cartProducts.removeWhere((item) => selectedIds.contains(item.productId)); //kosongin product
+                _cartProducts.removeWhere((item) => selectedIds.contains(item.productId));
               });
             },
             child: const Text('Bayar'),
@@ -197,10 +213,10 @@ class _CartScreenState extends State<CartScreen> with SingleTickerProviderStateM
           children: [
             MyHeader(
               title: "Keranjang",
-              onTap: () {
+              onTapLeft: () {
                 Navigator.pushReplacement(
                   context,
-                  MaterialPageRoute(builder: (_) => const MainScreen()),
+                  MaterialPageRoute(builder: (_) => const IndexScreen(initialTab: 0,)),
                 );
               },
             ),
@@ -224,14 +240,14 @@ class _CartScreenState extends State<CartScreen> with SingleTickerProviderStateM
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 20),
-                      ElevatedButton(
+                      MyButton(
                         onPressed: () {
                           Navigator.pushReplacement(
                             context,
-                            MaterialPageRoute(builder: (_) => const MainScreen()),
+                            MaterialPageRoute(builder: (_) => const IndexScreen()),
                           );
                         },
-                        child: const Text("Belanja Sekarang"),
+                        text: "Belanja Sekarang",
                       ),
                     ],
                   ),

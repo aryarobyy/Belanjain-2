@@ -199,5 +199,7 @@ class AuthService {
     }
   }
 
-
+  Future<void> signOut() async {
+    await _storage.delete(key: 'uid');
+  }
 }
