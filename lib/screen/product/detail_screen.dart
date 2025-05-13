@@ -5,6 +5,8 @@ import 'package:belanjain/models/user_model.dart';
 import 'package:belanjain/screen/cart_screen.dart';
 import 'package:belanjain/screen/index.dart';
 import 'package:belanjain/screen/comment/comment_section.dart';
+import 'package:belanjain/screen/profile/seller_profile.dart';
+import 'package:belanjain/services/auth_service.dart';
 import 'package:belanjain/services/product/cartProduct_service.dart';
 import 'package:belanjain/services/product/cart_service.dart';
 import 'package:belanjain/widgets/header.dart';
@@ -30,15 +32,18 @@ class _DetailScreenState extends State<DetailScreen> {
   bool _isAdd = false;
   int _amount = 0;
   final ScrollController _scrollController = ScrollController();
+  UserModel? _sellerData;
 
   String get _title => widget.product.title;
   String get _description => widget.product.desc;
   double get _price => widget.product.price;
   int get _stock => widget.product.stock;
+  String get _sellerId => widget.product.sellerId;
 
   @override
   void initState() {
     super.initState();
+    _getSellerData();
   }
 
   @override
@@ -82,6 +87,13 @@ class _DetailScreenState extends State<DetailScreen> {
     }
   }
 
+  Future<void> _getSellerData () async {
+    final userData = await AuthService().getUserById(_sellerId);
+    setState(() {
+      _sellerData = userData;
+    });
+  }
+
   String getCategoryName(String category) {
     String formattedCategory = category.toString().split('.').last.toLowerCase();
     return formattedCategory[0].toUpperCase() + formattedCategory.substring(1);
@@ -95,139 +107,188 @@ class _DetailScreenState extends State<DetailScreen> {
     return Scaffold(
       body: SafeArea(
         child: Column(
-            children: [
-                MyHeader(
-                    title: widget.product.title,
-                    onTapLeft: (){
-                       Navigator.push(context, MaterialPageRoute(builder: (_) => const IndexScreen(initialTab: 0,)));
-                    }
+          children: [
+            MyHeader(
+                title: widget.product.title,
+                onTapLeft: (){
+                   Navigator.push(context, MaterialPageRoute(builder: (_) => const IndexScreen(initialTab: 0,)));
+                }
+            ),
+          Expanded(
+            child: ListView(
+              controller: _scrollController,
+              children: [
+                if (widget.product.imageUrl.isNotEmpty)
+                  const SizedBox(height: 14,),
+                  Container(
+                    width: double.infinity,
+                    height: 300,
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                    ),
+                    child: widget.product.imageUrl.isNotEmpty
+                        ? Image.network(
+                      widget.product.imageUrl,
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) =>
+                      const Center(child: Icon(Icons.image_not_supported, size: 80, color: Colors.grey)),
+                    )
+                        : const Center(child: Icon(Icons.image_not_supported, size: 80, color: Colors.grey)),
+                  ),
+
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  color: Colors.white,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _title,
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+
+                      Text(
+                        "Rp ${formatCurrency.format(_price)}",
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.green,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      Wrap(
+                        children: [
+                          Chip(
+                            label: Text(
+                              category,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                              ),
+                            ),
+                            backgroundColor: primaryColor,
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                          ),
+                          const SizedBox(width: 8),
+                          Chip(
+                            label: Text(
+                              "Stock: $_stock",
+                              style: const TextStyle(
+                                color: Colors.black87,
+                                fontSize: 12,
+                              ),
+                            ),
+                            backgroundColor: Colors.grey[200],
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-              Expanded(
-                child: ListView(
-                controller: _scrollController,
-                children: [
-                  if (widget.product.imageUrl.isNotEmpty)
-                    const SizedBox(height: 14,),
-                    Container(
-                      width: double.infinity,
-                      height: 300,
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
+                const SizedBox(height: 8),
+                InkWell(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => SellerProfile(userId: _sellerId),
                       ),
-                      child: widget.product.imageUrl.isNotEmpty
-                          ? Image.network(
-                        widget.product.imageUrl,
-                        fit: BoxFit.contain,
-                        errorBuilder: (context, error, stackTrace) =>
-                        const Center(child: Icon(Icons.image_not_supported, size: 80, color: Colors.grey)),
-                      )
-                          : const Center(child: Icon(Icons.image_not_supported, size: 80, color: Colors.grey)),
-                    ),
-
-                  Container(
-                    padding: const EdgeInsets.all(16),
+                    );
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     color: Colors.white,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    child: Row(
                       children: [
-                        Text(
-                          _title,
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black,
-                          ),
+                        CircleAvatar(
+                          radius: 24,
+                          backgroundImage: _sellerData?.imageUrl != null && _sellerData!.imageUrl.isNotEmpty
+                              ? NetworkImage(_sellerData!.imageUrl)
+                              : const AssetImage('assets/images/default_user.png') as ImageProvider,
                         ),
-                        const SizedBox(height: 8),
-
-                        Text(
-                          "Rp ${formatCurrency.format(_price)}",
-                          style: const TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.green,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-
-                        Wrap(
-                          children: [
-                            Chip(
-                              label: Text(
-                                category,
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _sellerData?.name ?? "Loading...",
                                 style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 12,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
-                              backgroundColor: primaryColor,
-                              padding: const EdgeInsets.symmetric(horizontal: 8),
-                            ),
-                            const SizedBox(width: 8),
-                            Chip(
-                              label: Text(
-                                "Stock: $_stock",
-                                style: const TextStyle(
-                                  color: Colors.black87,
+                              const SizedBox(height: 4),
+                              const Text(
+                                "Penjual Terverifikasi",
+                                style: TextStyle(
                                   fontSize: 12,
+                                  color: Colors.grey,
                                 ),
                               ),
-                              backgroundColor: Colors.grey[200],
-                              padding: const EdgeInsets.symmetric(horizontal: 8),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
+                        const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 8),
+                ),
 
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    color: Colors.white,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          "Description",
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black,
-                          ),
+                const SizedBox(height: 8),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  color: Colors.white,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        "Description",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
                         ),
-                        const SizedBox(height: 8),
-                        const Divider(),
-                        const SizedBox(height: 8),
-                        Text(
-                          _description,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: Colors.black,
-                            height: 1.5,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    color: Colors.white,
-                    child: SizedBox(
-                      height: 200,
-                      child: CommentSection(
-                        userData: widget.userData!,
-                        product: widget.product,
                       ),
+                      const SizedBox(height: 8),
+                      const Divider(),
+                      const SizedBox(height: 8),
+                      Text(
+                        _description,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: Colors.black,
+                          height: 1.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 8),
+
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  color: Colors.white,
+                  child: SizedBox(
+                    height: 200,
+                    child: CommentSection(
+                      userData: widget.userData!,
+                      product: widget.product,
                     ),
                   ),
+                ),
 
-                  const SizedBox(height: 80),
-                  ],
+                const SizedBox(height: 80),
+                ],
            ),
          ),
         ],

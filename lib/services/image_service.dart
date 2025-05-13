@@ -36,14 +36,22 @@ class ImagesService {
         return;
       }
 
-      final uuid = Uuid().v4();
-      final cloudName = dotenv.env['CLOUDINARY_CLOUD_NAME']!;
-      final apiKey = dotenv.env['CLOUDINARY_API_KEY']!;
-      final apiSecret = dotenv.env['CLOUDINARY_API_SECRET']!;
-      final timestamp = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+      final String uuid       = const Uuid().v4();
+      final String cloudName  = dotenv.env['CLOUDINARY_CLOUD_NAME']!;
+      final String apiKey     = dotenv.env['CLOUDINARY_API_KEY']!;
+      final String apiSecret  = dotenv.env['CLOUDINARY_API_SECRET']!;
+      final int    timestamp  = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+      final String folder     = 'belanjain';
 
-      final signatureString = "public_id=$uuid&timestamp=$timestamp$apiSecret";
-      final signature = sha1.convert(utf8.encode(signatureString)).toString();
+      // final signatureString = "public_id=$uuid&timestamp=$timestamp$apiSecret";
+      // final signature = sha1.convert(utf8.encode(signatureString)).toString();
+
+      final signature = generateSignature(
+        publicId: uuid,
+        timestamp: timestamp,
+        folder: folder,
+        apiSecret: apiSecret,
+      );
 
       final uri = Uri.parse('https://api.cloudinary.com/v1_1/$cloudName/auto/upload');
       var request = http.MultipartRequest('POST', uri)
@@ -51,6 +59,7 @@ class ImagesService {
         ..fields['timestamp'] = timestamp.toString()
         ..fields['api_key'] = apiKey
         ..fields['signature'] = signature
+        ..fields['folder']    = folder
         ..files.add(
           await http.MultipartFile.fromPath(
             'file',
@@ -79,14 +88,20 @@ class ImagesService {
     try {
       final uri = Uri.parse(imageUrl);
       final pathSegments = uri.pathSegments;
-      final publicId = pathSegments.last.split('.').first;
+      final String publicId = pathSegments.last.split('.').first;
 
-      final cloudName = dotenv.env['CLOUDINARY_CLOUD_NAME']!;
-      final apiKey = dotenv.env['CLOUDINARY_API_KEY']!;
-      final apiSecret = dotenv.env['CLOUDINARY_API_SECRET']!;
+      final String cloudName  = dotenv.env['CLOUDINARY_CLOUD_NAME']!;
+      final String apiKey     = dotenv.env['CLOUDINARY_API_KEY']!;
+      final String apiSecret  = dotenv.env['CLOUDINARY_API_SECRET']!;
+      final String folder     = 'belanjain';
 
       final timestamp = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-      final signature = generateSignature(publicId, timestamp, apiSecret);
+      final signature = generateSignature(
+        publicId: publicId,
+        timestamp: timestamp,
+        folder: folder,
+        apiSecret: apiSecret,
+      );
 
       final deleteUri =
       Uri.parse('https://api.cloudinary.com/v1_1/$cloudName/image/destroy');
@@ -114,10 +129,30 @@ class ImagesService {
     }
   }
 
-  String generateSignature(String publicId, int timestamp, String apiSecret) {
-    final params = 'public_id=$publicId&timestamp=$timestamp$apiSecret';
-    final bytes = utf8.encode(params);
-    final digest = sha1.convert(bytes);
-    return digest.toString();
+  String generateSignature({
+    required String publicId,
+    required int timestamp,
+    required String folder,
+    required String apiSecret,
+  }) {
+    final params = {
+      'folder': folder,
+      'public_id': publicId,
+      'timestamp': timestamp.toString(),
+    };
+
+    final sortedKeys = params.keys.toList()..sort();
+
+    final buffer = StringBuffer();
+    for (var i = 0; i < sortedKeys.length; i++) {
+      final k = sortedKeys[i];
+      buffer.write('$k=${params[k]}');
+      if (i < sortedKeys.length - 1) buffer.write('&');
+    }
+    buffer.write(apiSecret);
+
+    final signature = sha1.convert(utf8.encode(buffer.toString())).toString();
+    return signature;
   }
+
 }
