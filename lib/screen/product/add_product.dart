@@ -93,7 +93,7 @@ class _AddProductState extends State<AddProduct> with WidgetsBindingObserver {
 
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => MainScreen()),
+        MaterialPageRoute(builder: (context) => const IndexScreen()),
       );
     } catch (e) {
       MySnackbar(context, "Gagal posting: ${e.toString()}");

@@ -10,7 +10,7 @@ class VolumeSelector extends StatefulWidget {
 
   const VolumeSelector({
     Key? key,
-    this.initialValue = 2.5,
+    required this.initialValue,
     required this.onChanged,
     this.starCount = 5,
     this.allowHalfStars = true,
