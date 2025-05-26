@@ -44,61 +44,65 @@ class _MyTextFieldState extends State<MyTextField> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 15),
-      child: Material(
-        color: Colors.transparent,
-        child: TextField(
-          enabled: true,
-          controller: widget.controller,
-          textCapitalization: widget.textCapitalization,
-          keyboardType: widget.inputType == TextInputType.multiline
-              ? TextInputType.multiline
-              : widget.inputType,
-          maxLines: widget.maxLine,
-          minLines: widget.minLine,
-          obscureText: _obscureText,
-          textAlign: TextAlign.start,
-          style: const TextStyle(
-            color: Colors.black,
-            fontSize: 16,
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Colors.grey[100],
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
           ),
-          decoration: InputDecoration(
-            prefixIcon: widget.prefixIcon != null
-                ? Icon(widget.prefixIcon)
-                : null,
-            suffixIcon: widget.obscureText
-                ? IconButton(
-              icon: Icon(
-                _obscureText
-                    ? Icons.visibility_off
-                    : Icons.visibility,
-                color: Colors.grey,
-              ),
-              onPressed: () {
-                setState(() {
-                  _obscureText = !_obscureText;
-                });
-              },
-            )
-                : null,
-            isDense: true,
-            labelText: widget.name,
-            hintText: widget.hintText,
-            counterText: "",
-            labelStyle: TextStyle(color: widget.textColor ?? Colors.grey),
-            border: OutlineInputBorder(
-              borderSide: BorderSide(color: widget.outlineColor ?? Colors.black),
-              borderRadius: BorderRadius.all(Radius.circular(10)),
+        ],
+      ),
+      child: TextField(
+        controller: widget.controller,
+        textCapitalization: widget.textCapitalization,
+        keyboardType: widget.inputType,
+        maxLines: widget.maxLine,
+        minLines: widget.minLine,
+        obscureText: _obscureText,
+        style: TextStyle(
+          color: widget.textColor ?? Colors.black87,
+          fontSize: 16,
+        ),
+        decoration: InputDecoration(
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+          prefixIcon: widget.prefixIcon != null
+              ? Icon(widget.prefixIcon, color: Colors.grey)
+              : null,
+          suffixIcon: widget.obscureText
+              ? IconButton(
+            icon: Icon(
+              _obscureText ? Icons.visibility_off : Icons.visibility,
+              color: Colors.grey,
             ),
-            focusedBorder: OutlineInputBorder(
-              borderSide: BorderSide(color: widget.outlineColor ?? Colors.black),
-              borderRadius: BorderRadius.all(Radius.circular(10)),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderSide: BorderSide(color: widget.outlineColor ?? Colors.black),
-              borderRadius: BorderRadius.all(Radius.circular(10)),
-            ),
+            onPressed: () {
+              setState(() {
+                _obscureText = !_obscureText;
+              });
+            },
+          )
+              : null,
+          hintText: widget.hintText ?? '',
+          hintStyle: const TextStyle(color: Colors.grey),
+          border: OutlineInputBorder(
+            borderSide: BorderSide.none,
+            borderRadius: BorderRadius.circular(12),
           ),
+          focusedBorder: OutlineInputBorder(
+            borderSide: BorderSide(color: widget.outlineColor ?? Colors.blue, width: 2),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderSide: BorderSide.none,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          filled: true,
+          fillColor: Colors.grey[100],
+          labelText: widget.name,
+          labelStyle: const TextStyle(color: Colors.grey),
         ),
       ),
     );

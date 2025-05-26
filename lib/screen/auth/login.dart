@@ -12,6 +12,7 @@ class _LoginState extends State<Login> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _isLoading = false;
+  bool _obscureText = true;
 
   @override
   void dispose() {
@@ -56,90 +57,165 @@ class _LoginState extends State<Login> {
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            double width = constraints.maxWidth < 600 ? constraints.maxWidth * 0.9 : 400;
-            return Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Form(
-                key: _formKey,
-                child: SizedBox(
-                  width: width,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.center,
+      backgroundColor: Colors.white,
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            Container(
+              height: 300,
+              width: double.infinity,
+              decoration: const BoxDecoration(
+                color: primaryColor,
+                borderRadius: BorderRadius.vertical(
+                  bottom: Radius.circular(30),
+                ),
+              ),
+              child: const Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.account_circle, size: 60, color: Colors.white),
+                  SizedBox(height: 20),
+                  Text(
+                    "Sign in to your\nAccount",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  SizedBox(height: 10),
+                  Text(
+                    "Enter your email and password to log in",
+                    style: TextStyle(color: Colors.white70),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0),
+              child: Column(
+                children: [
+                  ElevatedButton.icon(
+                    icon: const Icon(Icons.g_mobiledata, size: 30),
+                    label: const Text("Continue with Google"),
+                    onPressed: () {},
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: Colors.black,
+                      elevation: 2,
+                      minimumSize: const Size.fromHeight(50),
+                      side: const BorderSide(color: Colors.grey),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Row(
                     children: [
-                      const Text("Email"),
-                      TextFormField(
-                        controller: _emailController,
-                        obscureText: false,
-                        decoration: const InputDecoration(
-                          labelText: "Email",
-                          hintText: "Enter Email",
-                          prefixIcon: Icon(Icons.email),
-                          border: OutlineInputBorder(),
+                      Expanded(child: Divider()),
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 8.0),
+                        child: Text("Or login with"),
+                      ),
+                      Expanded(child: Divider()),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Form(
+                    key: _formKey,
+                    child: Column(
+                      children: [
+                        MyTextField(
+                          controller: _emailController,
+                          name: "Email",
+                          prefixIcon:  Icons.email_rounded,
+                          inputType: TextInputType.emailAddress,
                         ),
-                      ),
-                      const SizedBox(height: 16),
-                      const Text("Password"),
-                      TextFormField(
-                        controller: _passwordController,
-                        obscureText: true,
-                        decoration: const InputDecoration(
-                          labelText: "Password",
-                          hintText: "Enter Password",
-                          prefixIcon: Icon(Icons.lock),
-                          border: OutlineInputBorder(),
+                        const SizedBox(height: 16),
+                        MyTextField(
+                          controller: _passwordController,
+                          name: "Password",
+                          inputType: TextInputType.name,
+                          prefixIcon: Icons.lock_outline_rounded,
+                          obscureText: _obscureText,
                         ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter a password';
-                          } else if (value.length < 6) {
-                            return 'Password must be at least 6 characters long';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      _isLoading
-                          ? const CircularProgressIndicator()
-                          : MyButton(
-                        onPressed: _isLoading ? null : _submitForm,
-                        text: "Login",
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Text("Dont have an account? "),
-                          InkWell(
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (context) => const Register()),
-                              );
-                            },
-                            child: const Text(
-                              "Register",
+                        const SizedBox(height: 8),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                Checkbox(value: false, onChanged: (_) {}),
+                                const Text("Remember me"),
+                              ],
+                            ),
+                            TextButton(
+                              onPressed: () {},
+                              child: const Text("Forgot Password ?"),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: _isLoading ? null : _submitForm,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: primaryColor,
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                            child: _isLoading
+                                ? const CircularProgressIndicator(
+                              color: Colors.white,
+                            )
+                            : const Text(
+                              "Log In",
                               style: TextStyle(
-                                color: Colors.blue,
-                                decoration: TextDecoration.underline,
+                                color: Colors.white
                               ),
                             ),
                           ),
-                        ],
-                      ),
-                    ],
+                        ),
+                        const SizedBox(height: 20),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Text("Don’t have an account? "),
+                            GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const Register(),
+                                  ),
+                                );
+                              },
+                              child: const Text(
+                                "Sign Up",
+                                style: TextStyle(
+                                  color: Color(0xFF2D73FF),
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            )
+                          ],
+                        )
+                      ],
+                    ),
                   ),
-                ),
+                ],
               ),
-            );
-          },
+            ),
+          ],
         ),
       ),
     );
