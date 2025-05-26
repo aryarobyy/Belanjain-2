@@ -5,12 +5,11 @@ import 'package:belanjain/screen/auth/auth.dart';
 import 'package:belanjain/screen/cart_screen.dart';
 import 'package:belanjain/screen/product/add_product.dart';
 import 'package:belanjain/screen/profile/seller_profile.dart';
+import 'package:belanjain/screen/profile/user_profile.dart';
 import 'package:belanjain/services/auth_service.dart';
 import 'package:belanjain/services/product/cart_service.dart';
 import 'package:flutter/material.dart';
 import 'main_screen.dart';
-import 'kamera_screen.dart';
-import 'profile/user_profile.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class IndexScreen extends StatefulWidget {
@@ -66,7 +65,7 @@ class _IndexScreenState extends State<IndexScreen> {
       widgetOptions.addAll([
         MainScreen(inputCategory: 'all', searchQuery: _searchQuery, isSearching: _isSearching),
         // const KameraScreen(),
-        SellerProfile(userId: _currUserData!.userId,),
+        _currUserData!.role == 'seller' ?  SellerProfile(userId: _currUserData!.userId,) : UserProfile(userId: _currUserData!.userId),
       ]);
     });
   }

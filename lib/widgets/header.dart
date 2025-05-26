@@ -1,45 +1,53 @@
 import 'package:belanjain/components/colors.dart';
+import 'package:belanjain/screen/index.dart';
 import 'package:flutter/material.dart';
 
 class MyHeader extends StatelessWidget {
   final String title;
-  final void Function()? onTap;
+  final void Function()? onTapLeft;
+  final void Function()? onTapRight;
+  final IconData? iconRight;
 
   const MyHeader({
     Key? key,
     required this.title,
-    required this.onTap,
+    required this.onTapLeft,
+    this.onTapRight,
+    this.iconRight,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       color: primaryColor,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       child: Row(
         children: [
           IconButton(
-            onPressed: onTap,
             icon: const Icon(
               Icons.arrow_back_outlined,
-              color: Colors.white,
-            )
+              color: whiteColor,
+            ),
+            onPressed: onTapLeft,
           ),
-          const SizedBox(width: 8),
           Expanded(
             child: Text(
               title,
-              textAlign: TextAlign.center,
               style: const TextStyle(
                 color: Colors.white,
-                fontSize: 24,
+                fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
+              textAlign: TextAlign.center,
             ),
           ),
-          const SizedBox(width: 32),
+          IconButton(
+            icon: Icon(iconRight),
+            onPressed: onTapRight,
+          ),
         ],
       ),
     );
+
   }
 }
