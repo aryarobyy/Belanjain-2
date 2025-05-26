@@ -102,4 +102,36 @@ class CommentService{
     }
     throw Exception('Reply not found');
   }
+
+  Future<CommentModel> deleteComment (
+    String productId,
+    String commentId,
+    Map<String, dynamic> updatedData,
+      ) async {
+    try{
+      await _firestore
+          .collection(PRODUCT_COLLECTION)
+          .doc(productId)
+          .collection(COMMENT_COLLECTION)
+          .doc(commentId)
+          .set(updatedData, SetOptions(merge: true));
+
+      final DocumentSnapshot commentDoc = await _firestore
+          .collection(PRODUCT_COLLECTION)
+          .doc(productId)
+          .collection(COMMENT_COLLECTION)
+          .doc(commentId)
+          .get();
+
+      if (commentDoc.exists) {
+        print("Fetched updated deleted data: ${commentDoc.data()}");
+        return CommentModel.fromMap(commentDoc.data() as Map<String, dynamic>);
+      } else {
+        print("deleted document not found after update.");
+        throw Exception("Failed to retrieve updated deleted comment");
+      }
+    } catch (e) {
+      throw Exception(e);
+    }
+  }
 }

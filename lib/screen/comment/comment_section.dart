@@ -1,4 +1,7 @@
+import 'package:belanjain/components/button.dart';
 import 'package:belanjain/components/colors.dart';
+import 'package:belanjain/components/popup.dart';
+import 'package:belanjain/components/snackbar.dart';
 import 'package:belanjain/models/comment/comment_model.dart';
 import 'package:belanjain/models/product/product_model.dart';
 import 'package:belanjain/models/user_model.dart';
@@ -101,6 +104,22 @@ class _CommentSectionState extends State<CommentSection> {
     }
   }
 
+  void _handleDeleteComment(BuildContext context, String productId, String commentId) async {
+    final result = await MyPopup(
+      context: context,
+      title: "Hapus Komentar",
+      content: "Anda yakin ingin menghapus komentar ini?",
+    );
+
+    if (result == true) {
+      Map<String, dynamic> updatedData = {
+        "hide": true,
+      };
+      await CommentService().deleteComment(productId, commentId, updatedData);
+    }
+  }
+
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -119,7 +138,9 @@ class _CommentSectionState extends State<CommentSection> {
                       return Center(child: Text('Error: ${snapshot.error}'));
                     }
                     final comments = snapshot.data!;
-                    if (comments.isEmpty) {
+                    final visibleComments = comments.where((c) => c.hide == false).toList();
+
+                    if (visibleComments.isEmpty) {
                       return Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -128,40 +149,38 @@ class _CommentSectionState extends State<CommentSection> {
                             if (hasBoughtProduct)
                               Padding(
                                 padding: const EdgeInsets.only(top: 16.0),
-                                child:
-                                  ElevatedButton(
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: primaryColor,
-                                      foregroundColor: Colors.white,
-                                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      elevation: 3,
-                                      textStyle: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                                child: ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: primaryColor,
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
                                     ),
-                                    onPressed: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (_) => AddComment(
-                                            product: widget.product,
-                                            userData: widget.userData!,
-                                          )
-                                        ),
-                                      );
-                                    },
-                                    child: const Text("Tambahkan Komentar"),
+                                    elevation: 3,
+                                    textStyle: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => AddComment(
+                                          product: widget.product,
+                                          userData: widget.userData!,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                  child: const Text("Tambahkan Komentar"),
+                                ),
                               ),
                           ],
                         ),
                       );
                     }
-
                     return Column(
                       children: [
                         Expanded(
@@ -171,7 +190,8 @@ class _CommentSectionState extends State<CommentSection> {
                             itemBuilder: (context, index) {
                               final comment = comments[index];
                               _buyerId = comment.buyerId;
-                              return ListTile(
+                              if (comment.hide == false) {
+                                return ListTile(
                                 leading: FutureBuilder<UserModel>(
                                   future: AuthService().getUserById(comment.buyerId!),
                                   builder: (ctx, userSnap) {
@@ -186,6 +206,7 @@ class _CommentSectionState extends State<CommentSection> {
                                     );
                                   },
                                 ),
+
                                 title: FutureBuilder<UserModel>(
                                   future: AuthService().getUserById(comment.buyerId!),
                                   builder: (ctx, userSnap) {
@@ -195,9 +216,22 @@ class _CommentSectionState extends State<CommentSection> {
                                     if (userSnap.hasError || userSnap.data == null) {
                                       return const Text('Unknown User');
                                     }
-                                    return Text(
-                                      userSnap.data!.name,
-                                      style: const TextStyle(fontWeight: FontWeight.bold),
+                                    return Row(
+                                      children: [
+                                        Text(
+                                          userSnap.data!.name,
+                                          style: const TextStyle(fontWeight: FontWeight.bold),
+                                        ),
+                                        const Spacer(),
+                                        if(widget.userData!.role == 'admin')
+                                          IconButton(
+                                            icon: const Icon(
+                                              Icons.delete_forever_outlined,
+                                              color: Colors.red,
+                                            ),
+                                            onPressed: () => _handleDeleteComment( context, widget.product.productId, comment.commentId),
+                                          )
+                                      ],
                                     );
                                   },
                                 ),
@@ -215,39 +249,47 @@ class _CommentSectionState extends State<CommentSection> {
                                   ],
                                 ),
                               );
+                              }
                             },
                           ),
                         ),
-                        if(!comments.contains(_buyerId))
+
+                        if(comments.contains(_buyerId))
                         Padding(
                           padding: const EdgeInsets.only(top: 16.0),
                           child:
-                          ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: primaryColor,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              elevation: 3,
-                              textStyle: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (_) => AddComment(
-                                      product: widget.product,
-                                      userData: widget.userData!,
-                                    )
+                          Center(
+                            child: Column(
+                              children: [
+                                ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: primaryColor,
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    elevation: 3,
+                                    textStyle: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (_) => AddComment(
+                                            product: widget.product,
+                                            userData: widget.userData!,
+                                          )
+                                      ),
+                                    );
+                                  },
+                                  child: const Text("Tambahkan Komentar"),
                                 ),
-                              );
-                            },
-                            child: const Text("Tambahkan Komentar"),
+                              ],
+                            ),
                           ),
                         ),
                         if (comments.length > 2 && !showAllComments)

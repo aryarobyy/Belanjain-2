@@ -6,12 +6,14 @@ class CommentModel {
   final String content;
   final DateTime createdAt;
   final double rating;
+  final bool hide;
 
   CommentModel({
     required this.commentId,
     required this.buyerId,
     required this.createdAt,
     required this.content,
+    required this.hide,
     required double rating,
   }) : rating = rating > 5.0 ? 5.0 : rating;
 
@@ -25,6 +27,7 @@ class CommentModel {
       commentId: map['id'] ?? "",
       buyerId: map['buyerId'] ?? "",
       content: map['content'] ?? "",
+      hide: map['hide'] ?? false,
       createdAt: map['createdAt'] is Timestamp
           ? (map['createdAt'] as Timestamp).toDate()
           : DateTime.now(),
@@ -38,6 +41,7 @@ class CommentModel {
       'buyerId': buyerId,
       'content': content,
       'rating': rating,
+      'hide': hide,
       'createdAt': Timestamp.fromDate(createdAt),
     };
   }
@@ -47,6 +51,7 @@ class CommentModel {
     String? buyerId,
     String? content,
     double? rating,
+    bool? hide,
     DateTime? createdAt,
   }) {
     double newRating = rating ?? this.rating;
@@ -59,6 +64,7 @@ class CommentModel {
       buyerId: buyerId ?? this.buyerId,
       content: content ?? this.content,
       rating: newRating,
+      hide: hide ?? this.hide,
       createdAt: createdAt ?? this.createdAt,
     );
   }
