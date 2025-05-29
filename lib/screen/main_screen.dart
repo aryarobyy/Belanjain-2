@@ -29,46 +29,101 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   String _currentCategory = 'all';
   UserModel? _currentUser;
-  List<ProductModel>? _cachedProducts;
+  List<ProductModel>? _allProducts;
+  List<ProductModel>? _displayedProducts;
   bool _isLoading = true;
 
-  List<String> categories =
-  ProductCategory.values.map((e) => e.value).toList();
+  List<String> categories = ProductCategory.values.map((e) => e.value).toList();
 
   @override
   void initState() {
     super.initState();
-    _fetchCurrentUser();
     _currentCategory = widget.inputCategory;
+    _fetchCurrentUser();
     _fetchProducts();
+  }
+
+  @override
+  void didUpdateWidget(covariant MainScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.searchQuery != widget.searchQuery ||
+        oldWidget.isSearching != widget.isSearching ||
+        oldWidget.inputCategory != widget.inputCategory) {
+      _currentCategory = widget.inputCategory;
+      _filterProducts();
+    }
   }
 
   Future<void> _fetchCurrentUser() async {
     try {
       const storage = FlutterSecureStorage();
       String? userId = await storage.read(key: 'uid');
-      if (userId == null) {
-        setState(() => _isLoading = false);
-        return;
-      }
+      if (userId == null) return;
+
       final user = await AuthService().getUserById(userId);
       setState(() {
         _currentUser = user;
-        _isLoading = false;
       });
     } catch (e) {
       debugPrint('Error fetching user: $e');
-      setState(() => _isLoading = false);
     }
   }
 
   Future<void> _fetchProducts() async {
+    setState(() {
+      _isLoading = true;
+    });
+
     try {
-      final products = await ProductService().getProducts();
-      setState(() => _cachedProducts = products);
+      List<ProductModel> products;
+
+      if (widget.isSearching && widget.searchQuery.isNotEmpty) {
+        final allProducts = await ProductService().getProducts();
+        products = allProducts.where((product) =>
+            product.title.toLowerCase().contains(widget.searchQuery.toLowerCase())
+        ).toList();
+      } else {
+        products = await ProductService().getProducts();
+      }
+
+      setState(() {
+        _allProducts = products;
+      });
+
+      _filterProducts();
+
     } catch (e) {
       debugPrint('Error fetching products: $e');
+      setState(() {
+        _allProducts = [];
+        _displayedProducts = [];
+      });
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
     }
+  }
+
+  void _filterProducts() {
+    if (_allProducts == null) return;
+
+    List<ProductModel> filtered = _allProducts!.where((product) {
+      // Category filter
+      final matchesCategory = _currentCategory == 'all' ||
+          product.category.toString().split('.').last.toLowerCase() == _currentCategory.toLowerCase();
+
+      bool matchesSearch = true;
+      if (!widget.isSearching && widget.searchQuery.isNotEmpty) {
+        matchesSearch = product.title.toLowerCase().contains(widget.searchQuery.toLowerCase());
+      }
+
+      return matchesCategory && matchesSearch;
+    }).toList();
+
+    setState(() {
+      _displayedProducts = filtered;
+    });
   }
 
   @override
@@ -100,7 +155,7 @@ class _MainScreenState extends State<MainScreen> {
               ),
               const SizedBox(height: 20),
               Text(
-                'Loading products...',
+                widget.isSearching ? 'Searching products...' : 'Loading products...',
                 style: TextStyle(
                   color: Colors.grey[600],
                   fontSize: 16,
@@ -119,7 +174,7 @@ class _MainScreenState extends State<MainScreen> {
         children: [
           _buildCategoryChips(),
           Expanded(
-            child: _cachedProducts == null
+            child: _displayedProducts == null
                 ? Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -154,7 +209,7 @@ class _MainScreenState extends State<MainScreen> {
                 ],
               ),
             )
-                : _buildProductList(widget.searchQuery),
+                : _buildProductList(),
           ),
         ],
       ),
@@ -188,7 +243,12 @@ class _MainScreenState extends State<MainScreen> {
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
                 child: InkWell(
-                  onTap: () => setState(() => _currentCategory = category),
+                  onTap: () {
+                    setState(() {
+                      _currentCategory = category;
+                    });
+                    _filterProducts();
+                  },
                   borderRadius: BorderRadius.circular(25),
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -254,16 +314,8 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 
-  Widget _buildProductList(String searchQuery) {
-    final filtered = _cachedProducts!.where((p) {
-      final matchesSearch =
-      p.title.toLowerCase().contains(searchQuery.toLowerCase());
-      final matchesCategory = _currentCategory == 'all' ||
-          p.category.toString().split('.').last.toLowerCase() == _currentCategory;
-      return matchesSearch && matchesCategory;
-    }).toList();
-
-    if (filtered.isEmpty) {
+  Widget _buildProductList() {
+    if (_displayedProducts!.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -290,14 +342,16 @@ class _MainScreenState extends State<MainScreen> {
                       borderRadius: BorderRadius.circular(50),
                     ),
                     child: Icon(
-                      Icons.shopping_basket_outlined,
+                      widget.isSearching ? Icons.search_off : Icons.shopping_basket_outlined,
                       size: 48,
                       color: Colors.grey[400],
                     ),
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'Produk masih kosong',
+                    widget.isSearching
+                        ? 'Tidak ada hasil pencarian'
+                        : 'Produk masih kosong',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
@@ -306,7 +360,9 @@ class _MainScreenState extends State<MainScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Belum ada produk di kategori ini',
+                    widget.isSearching
+                        ? 'Coba kata kunci lain atau ubah kategori'
+                        : 'Belum ada produk di kategori ini',
                     style: TextStyle(
                       fontSize: 14,
                       color: Colors.grey[500],
@@ -321,7 +377,7 @@ class _MainScreenState extends State<MainScreen> {
     }
 
     return ProductTile(
-      products: filtered,
+      products: _displayedProducts!,
       onProductTap: _handleProductTap,
     );
   }

@@ -135,4 +135,68 @@
       final total = ratings.fold<double>(0.0, (sum, rating) => sum + rating);
       return double.parse((total / ratings.length).toStringAsFixed(1));
     }
+
+    Future<List<ProductModel>> getProductsByName(String nameProduct) async {
+      if (nameProduct.isEmpty) {
+        return getProducts();
+      }
+
+      final searchQuery = nameProduct.toLowerCase();
+
+      final querySnapshot = await _firestore
+          .collection(PRODUCT_COLLECTION)
+          .where('searchKeywords', arrayContains: searchQuery)
+          .get();
+
+      if (querySnapshot.docs.isNotEmpty) {
+        return querySnapshot.docs.map((doc) {
+          final data = doc.data();
+          return ProductModel.fromMap(data);
+        }).toList();
+      }
+
+      return _getProductsByPrefix(searchQuery);
+    }
+
+    Future<List<ProductModel>> _getProductsByPrefix(String prefix) async {
+      final querySnapshot = await _firestore
+          .collection(PRODUCT_COLLECTION)
+          .where('titleLowercase', isGreaterThanOrEqualTo: prefix)
+          .where('titleLowercase', isLessThanOrEqualTo: prefix + '\uf8ff')
+          .get();
+
+      return querySnapshot.docs.map((doc) {
+        final data = doc.data();
+        return ProductModel.fromMap(data);
+      }).toList();
+    }
+
+    List<String> generateSearchKeywords(String title) {
+      final keywords = <String>{};
+      final words = title.toLowerCase().split(' ');
+
+      for (final word in words) {
+        // Add the full word
+        keywords.add(word);
+
+        for (int i = 1; i <= word.length; i++) {
+          keywords.add(word.substring(0, i));
+        }
+      }
+
+      return keywords.toList();
+    }
+
+    Future<void> saveProductWithSearchKeywords(ProductModel product) async {
+      final searchKeywords = generateSearchKeywords(product.title);
+
+      final productData = product.toJson();
+      productData['searchKeywords'] = searchKeywords;
+      productData['titleLowercase'] = product.title.toLowerCase();
+
+      await _firestore
+          .collection(PRODUCT_COLLECTION)
+          .doc(product.productId)
+          .set(productData);
+    }
   }

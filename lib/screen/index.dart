@@ -1,4 +1,3 @@
-
 import 'package:belanjain/components/colors.dart';
 import 'package:belanjain/models/user_model.dart';
 import 'package:belanjain/screen/auth/auth.dart';
@@ -32,7 +31,7 @@ class _IndexScreenState extends State<IndexScreen> {
   bool _isUserExist = false;
   UserModel? _currUserData;
 
-  final List<Widget> widgetOptions = [];
+  final GlobalKey<State> _mainScreenKey = GlobalKey();
 
   @override
   void initState() {
@@ -54,29 +53,62 @@ class _IndexScreenState extends State<IndexScreen> {
     }
 
     final exists = await AuthService().isUserExist(userId);
-
     final userData = await AuthService().getUserById(userId);
+
     setState(() {
       _currUserData = userData;
       _isUserExist = exists;
       _isCheckingUser = false;
-
-      widgetOptions.clear();
-      widgetOptions.addAll([
-        MainScreen(inputCategory: 'all', searchQuery: _searchQuery, isSearching: _isSearching),
-        // const KameraScreen(),
-        _currUserData!.role == 'seller' ?  SellerProfile(userId: _currUserData!.userId,) : UserProfile(userId: _currUserData!.userId),
-      ]);
     });
   }
 
   void _onTapped(int index) {
     setState(() {
       _currentIndex = index;
-      _isSearching = false;
-      _searchQuery = '';
-      _searchController.clear();
+      if (index != 0) {
+        _isSearching = false;
+        _searchQuery = '';
+        _searchController.clear();
+      }
     });
+  }
+
+  void _onSearchChanged(String value) {
+    setState(() {
+      _searchQuery = value;
+    });
+  }
+
+  void _toggleSearch() {
+    setState(() {
+      _isSearching = !_isSearching;
+      if (!_isSearching) {
+        _searchQuery = '';
+        _searchController.clear();
+      }
+    });
+  }
+
+  Widget _getCurrentWidget() {
+    switch (_currentIndex) {
+      case 0:
+        return MainScreen(
+          key: ValueKey('main_${_searchQuery}_${_isSearching}'),
+          inputCategory: 'all',
+          searchQuery: _searchQuery,
+          isSearching: _isSearching,
+        );
+      case 1:
+        return _currUserData!.role == 'seller'
+            ? SellerProfile(userId: _currUserData!.userId)
+            : UserProfile(userId: _currUserData!.userId);
+      default:
+        return MainScreen(
+          inputCategory: 'all',
+          searchQuery: _searchQuery,
+          isSearching: _isSearching,
+        );
+    }
   }
 
   @override
@@ -86,9 +118,7 @@ class _IndexScreenState extends State<IndexScreen> {
         body: Center(child: CircularProgressIndicator()),
       );
     }
-    return _isUserExist
-        ? buildNav(context)
-        : const AuthScreen();
+    return _isUserExist ? buildNav(context) : const AuthScreen();
   }
 
   Widget buildNav(BuildContext context) {
@@ -102,46 +132,59 @@ class _IndexScreenState extends State<IndexScreen> {
         ),
         title: _currentIndex == 0
             ? (_isSearching
-            ? TextField(
-          controller: _searchController,
-          autofocus: true,
-          decoration: const InputDecoration(hintText: 'Search...'),
-          onChanged: (v) => setState(() => _searchQuery = v),
-        )
-          : const Text('Belanjain'))
-          : Text(
-            _getTitle(),
-          style: const TextStyle(
-            color: Colors.white
+            ? Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(8),
           ),
+          child: TextField(
+            controller: _searchController,
+            autofocus: true,
+            decoration: const InputDecoration(
+              hintText: 'Cari produk...',
+              border: InputBorder.none,
+              contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              hintStyle: TextStyle(color: Colors.grey),
+            ),
+            style: const TextStyle(color: Colors.black),
+            onChanged: _onSearchChanged,
+            onSubmitted: (value) {
+              _onSearchChanged(value);
+            },
+          ),
+        )
+            : const Text('Belanjain'))
+            : Text(
+          _getTitle(),
+          style: const TextStyle(color: Colors.white),
         ),
         actions: _currentIndex == 0
             ? (_isSearching
             ? [
           IconButton(
-              icon: const Icon(Icons.close),
-              onPressed: () => setState(() {
-                _isSearching = false;
-                _searchQuery = '';
-                _searchController.clear();
-              })),
+            icon: const Icon(Icons.close),
+            onPressed: _toggleSearch,
+          ),
         ]
             : [
           IconButton(
-              icon: const Icon(Icons.search),
-              onPressed: () => setState(() => _isSearching = true)),
+            icon: const Icon(Icons.search),
+            onPressed: _toggleSearch,
+          ),
           IconButton(
-              icon: const Icon(Icons.shopping_cart_outlined),
-              onPressed: () {
-                if (_currUserData?.userId != null) {
-                  CartService().postCart();
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => CartScreen(userId: _currUserData!.userId)),
-                  );
-                }
-              }),
+            icon: const Icon(Icons.shopping_cart_outlined),
+            onPressed: () {
+              if (_currUserData?.userId != null) {
+                CartService().postCart();
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => CartScreen(userId: _currUserData!.userId),
+                  ),
+                );
+              }
+            },
+          ),
         ])
             : null,
       ),
@@ -151,7 +194,10 @@ class _IndexScreenState extends State<IndexScreen> {
           children: [
             const DrawerHeader(
               decoration: BoxDecoration(color: primaryColor),
-              child: Text('Belanjain Menu', style: TextStyle(color: Colors.white, fontSize: 24)),
+              child: Text(
+                'Belanjain Menu',
+                style: TextStyle(color: Colors.white, fontSize: 24),
+              ),
             ),
             ListTile(
               leading: const Icon(Icons.home),
@@ -162,15 +208,6 @@ class _IndexScreenState extends State<IndexScreen> {
                 Navigator.pop(context);
               },
             ),
-            // ListTile(
-            //   leading: const Icon(Icons.camera_alt),
-            //   title: const Text('Kamera'),
-            //   selected: _currentIndex == 1,
-            //   onTap: () {
-            //     _onTapped(1);
-            //     Navigator.pop(context);
-            //   },
-            // ),
             ListTile(
               leading: const Icon(Icons.person),
               title: const Text('Profile'),
@@ -188,7 +225,9 @@ class _IndexScreenState extends State<IndexScreen> {
                   Navigator.pop(context);
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => AddProduct(sellerData: _currUserData!)), // sesuaikan
+                    MaterialPageRoute(
+                      builder: (_) => AddProduct(sellerData: _currUserData!),
+                    ),
                   );
                 },
               ),
@@ -196,15 +235,17 @@ class _IndexScreenState extends State<IndexScreen> {
               leading: const Icon(Icons.logout),
               title: const Text('Logout'),
               onTap: () async {
-                const storage = FlutterSecureStorage();
-                await storage.delete(key: 'uid');
-                Navigator.push(context, MaterialPageRoute(builder: (_) => AuthScreen()));
+                AuthService().signOut(_currUserData!.userId);
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (_) => const AuthScreen()),
+                );
               },
             ),
           ],
         ),
       ),
-      body: widgetOptions[_currentIndex]
+      body: _getCurrentWidget(),
     );
   }
 
@@ -212,8 +253,6 @@ class _IndexScreenState extends State<IndexScreen> {
     switch (_currentIndex) {
       case 0:
         return 'Home';
-      // case 1:
-      //   return 'Kamera';
       case 1:
         return 'Profile';
       default:
