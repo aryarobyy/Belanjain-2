@@ -81,6 +81,28 @@ class CartProductService {
     }
   }
 
+   Stream<List<CartProductModel>> streamCartProducts(String cartId) async* {
+      try {
+        final querySnapshot = await _firestore
+            .collection(CART_COLLECTION)
+            .doc(cartId)
+            .collection(PRODUCT_LIST_COLLECTION)
+            .get();
+
+        if (querySnapshot.docs.isEmpty) {
+          yield [];
+        }
+
+        final products = querySnapshot.docs.map((doc) {
+          return CartProductModel.fromMap(doc.data());
+        }).toList();
+
+        yield products;
+      } catch (e) {
+        throw Exception(e);
+      }
+    }
+
   Future<void> deleteProduct(String cartId ,String productId) async {
     try{
       await _firestore

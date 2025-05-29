@@ -1,5 +1,6 @@
 import 'package:belanjain/components/button.dart';
 import 'package:belanjain/components/colors.dart';
+import 'package:belanjain/components/payment_popup.dart';
 import 'package:belanjain/components/snackbar.dart';
 import 'package:belanjain/models/cartProduct_model.dart';
 import 'package:belanjain/models/cart_model.dart';
@@ -144,8 +145,13 @@ class _CartScreenState extends State<CartScreen> with SingleTickerProviderStateM
     }
   }
 
-  void _confirmPayment() {
+  void _confirmPayment() async {
     if (_cart == null) return;
+
+    final didScan = await PaymentPopup(context: context);
+    if (didScan != true) {
+      return;
+    }
 
     final selected = _cartProducts.where((p) => p.isChecked).toList();
     if (selected.isEmpty) {
@@ -153,54 +159,50 @@ class _CartScreenState extends State<CartScreen> with SingleTickerProviderStateM
       return;
     }
 
-    double totalPayment = selected.fold(0.0, (sum, item) => sum + item.totalPrice);
+    // double totalPayment = selected.fold(0.0, (sum, item) => sum + item.totalPrice);
+    //
+    // final shouldPay = await showDialog<bool>(
+    //   context: context,
+    //   builder: (_) => AlertDialog(
+    //     title: const Text('Konfirmasi Pembayaran'),
+    //     content: Text(
+    //       'Total pembayaran Anda adalah: Rp ${formatCurrency.format(totalPayment)}',
+    //     ),
+    //     actions: [
+    //       TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Batal')),
+    //       TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Bayar')),
+    //     ],
+    //   ),
+    // );
+    //
+    // if (shouldPay != true) {
+    //   return;
+    // }
 
-    showDialog(
+    List<String> selectedIds = selected.map((e) => e.productId.toString()).toList();
+    await CartProductService().deleteProducts(_cart!.cartId, selectedIds);
+
+    final user = await AuthService().getUserById(_cart!.buyerId);
+    List<String> currentBought = List<String>.from(user.itemBought)..addAll(selectedIds);
+    await AuthService().updateUser({ "itemBought": currentBought }, _cart!.buyerId);
+
+    await showDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Konfirmasi Pembayaran'),
-        content: Text(
-          'Total pembayaran Anda adalah: Rp ${formatCurrency.format(totalPayment)}',
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Batal')),
-          TextButton(
-            onPressed: () async {
-              Navigator.pop(context);
-
-              List<String> selectedIds = selected
-                .map((item) => item.productId.toString())
-                .toList();
-
-              await CartProductService().deleteProducts(_cart!.cartId, selectedIds);
-
-              final user = await AuthService().getUserById(_cart!.buyerId);
-
-              List<String> currentBought = List<String>.from(user.itemBought);
-              currentBought.addAll(selectedIds);
-
-              await AuthService().updateUser({
-                "itemBought": currentBought,
-              }, _cart!.buyerId);
-
-              showDialog(
-                context: context,
-                builder: (_) => const AlertDialog(
-                  title: Text('Sukses'),
-                  content: Text('Pembayaran Kamu sukses'),
-                ),
-              );
-
-              setState(() {
-                _cartProducts.removeWhere((item) => selectedIds.contains(item.productId));
-              });
-            },
-            child: const Text('Bayar'),
-          ),
-        ],
+      builder: (_) => const AlertDialog(
+        title: Text('Sukses'),
+        content: Text('Pembayaran Kamu sukses'),
       ),
     );
+
+    setState(() {
+      _cartProducts.removeWhere((item) => selectedIds.contains(item.productId));
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Pembayaran berhasil!')),
+    );
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -394,9 +396,14 @@ class _CartScreenState extends State<CartScreen> with SingleTickerProviderStateM
           ),
           child: const Text(
             "Lanjutkan ke Pembayaran",
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
           ),
         ),
+
       ),
     );
   }
