@@ -3,7 +3,6 @@ import 'package:belanjain/models/user_model.dart';
 import 'package:belanjain/screen/auth/auth.dart';
 import 'package:belanjain/screen/cart_screen.dart';
 import 'package:belanjain/screen/product/add_product.dart';
-import 'package:belanjain/screen/profile/seller_profile.dart';
 import 'package:belanjain/screen/profile/user_profile.dart';
 import 'package:belanjain/services/auth_service.dart';
 import 'package:belanjain/services/product/cart_service.dart';
@@ -99,9 +98,7 @@ class _IndexScreenState extends State<IndexScreen> {
           isSearching: _isSearching,
         );
       case 1:
-        return _currUserData!.role == 'seller'
-            ? SellerProfile(userId: _currUserData!.userId)
-            : UserProfile(userId: _currUserData!.userId);
+        return UserProfile(userData: _currUserData!);
       default:
         return MainScreen(
           inputCategory: 'all',

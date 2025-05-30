@@ -1,4 +1,5 @@
 import 'package:belanjain/models/user_model.dart';
+import 'package:belanjain/services/image_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -51,8 +52,7 @@ class AuthService {
         'createdAt': DateTime.now().toUtc().toIso8601String(),
       };
 
-      UserCredential userCredential =
-          await _auth.createUserWithEmailAndPassword(
+      await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
@@ -90,7 +90,7 @@ class AuthService {
 
       final user = userCredential.user;
       if (user == null) {
-        throw Exception("Gagal mendapatkan informasi pengguna");
+        throw Exception("Autentikasi berhasil, tapi data pengguna tidak ditemukan.");
       }
 
       final querySnapshot = await _firestore
@@ -109,29 +109,17 @@ class AuthService {
           'lastLogin': DateTime.now().toIso8601String(),
           'isActive': true,
         });
+        final refreshed = await _firestore.collection(USER_COLLECTION).doc(userDoc.id).get();
+        print("SSSS ${refreshed.data()}");
 
         return "success";
       } else {
         throw Exception(
             "Profil pengguna tidak ditemukan; silakan registrasi terlebih dahulu.");
       }
-    } on FirebaseAuthException catch (e) {
-      switch (e.code) {
-        case 'user-not-found':
-          throw Exception("Tidak ada pengguna dengan email ini.");
-        case 'wrong-password':
-          throw Exception("Password salah.");
-        case 'invalid-email':
-          throw Exception("Format email tidak valid.");
-        case 'too-many-requests':
-          throw Exception(
-              "Terlalu banyak percobaan login. Silakan coba lagi nanti.");
-        default:
-          throw Exception(
-              e.message ?? "Terjadi kesalahan yang tidak diketahui.");
-      }
-    } catch (e) {
-      throw Exception("Gagal login: $e");
+    }  catch (e) {
+      print("Error saat login: $e");
+      throw Exception("Gagal login. Silakan coba lagi nanti.");
     }
   }
 
@@ -181,6 +169,18 @@ class AuthService {
     throw Exception('User not found');
   }
 
+  Stream<List<UserModel>> getUsers() {
+    return _firestore
+        .collection(USER_COLLECTION)
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs
+          .map((doc) => UserModel.fromMap(doc.data()))
+          .toList();
+    });
+  }
+
+
   Future<bool> isUserExist(String currentUserId) async {
     print('🔍 isUserExist called with id="$currentUserId"');
     if (currentUserId.isEmpty) {
@@ -199,7 +199,18 @@ class AuthService {
     }
   }
 
-  Future<void> signOut() async {
+  Future<void> signOut(String userId) async {
     await _storage.delete(key: 'uid');
+    await _firestore.collection(USER_COLLECTION).doc(userId).update({
+      'lastLogin': DateTime.now().toIso8601String(),
+      'isActive': false,
+    });
+  }
+
+  Future<void> deleteUser(String userId, String imageUrl) async {
+    await _firestore.collection(USER_COLLECTION)
+        .doc(userId)
+        .delete();
+    await ImagesService().deleteImage(imageUrl);
   }
 }
