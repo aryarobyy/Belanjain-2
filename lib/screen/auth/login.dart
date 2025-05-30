@@ -14,6 +14,8 @@ class _LoginState extends State<Login> {
   bool _isLoading = false;
   bool _obscureText = true;
 
+  final AuthService _auth = AuthService();
+
   @override
   void dispose() {
     _emailController.dispose();
@@ -22,25 +24,27 @@ class _LoginState extends State<Login> {
   }
 
   Future<void> _submitForm() async {
-     if (_formKey.currentState!.validate()) {
+    if (_formKey.currentState!.validate()) {
       setState(() {
         _isLoading = true;
       });
 
       try {
-        final data = await AuthService().loginUser(email: _emailController.text, password: _passwordController.text);
+        final data = await _auth.loginUser(
+            email: _emailController.text, password: _passwordController.text);
         print(data);
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text("User Login successfully")),
-            );
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => const IndexScreen(initialTab: 0,)),
-            );
-          }
-
-
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("User Login successfully")),
+          );
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+                builder: (context) => const IndexScreen(
+                  initialTab: 0,
+                )),
+          );
+        }
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -134,8 +138,19 @@ class _LoginState extends State<Login> {
                         MyTextField(
                           controller: _emailController,
                           name: "Email",
-                          prefixIcon:  Icons.email_rounded,
+                          prefixIcon: Icons.email_rounded,
                           inputType: TextInputType.emailAddress,
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return "Email tidak boleh kosong";
+                            }
+                            final emailRegex =
+                            RegExp(r"^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$");
+                            if (!emailRegex.hasMatch(value.trim())) {
+                              return "Format email tidak valid";
+                            }
+                            return null;
+                          },
                         ),
                         const SizedBox(height: 16),
                         MyTextField(
@@ -144,6 +159,15 @@ class _LoginState extends State<Login> {
                           inputType: TextInputType.name,
                           prefixIcon: Icons.lock_outline_rounded,
                           obscureText: _obscureText,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return "Password tidak boleh kosong";
+                            }
+                            if (value.length < 6) {
+                              return "Password minimal 6 karakter";
+                            }
+                            return null;
+                          },
                         ),
                         const SizedBox(height: 8),
                         Row(
@@ -177,11 +201,9 @@ class _LoginState extends State<Login> {
                                 ? const CircularProgressIndicator(
                               color: Colors.white,
                             )
-                            : const Text(
+                                : const Text(
                               "Log In",
-                              style: TextStyle(
-                                color: Colors.white
-                              ),
+                              style: TextStyle(color: Colors.white),
                             ),
                           ),
                         ),
@@ -189,7 +211,7 @@ class _LoginState extends State<Login> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Text("Don’t have an account? "),
+                            const Text("Don't have an account? "),
                             GestureDetector(
                               onTap: () {
                                 Navigator.push(

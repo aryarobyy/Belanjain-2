@@ -12,6 +12,7 @@ class MyTextField extends StatefulWidget {
   final String? hintText;
   final Color? textColor;
   final Color? outlineColor;
+  final String? Function(String?)? validator;
 
   const MyTextField({
     Key? key,
@@ -26,6 +27,7 @@ class MyTextField extends StatefulWidget {
     this.hintText,
     this.textColor,
     this.outlineColor,
+    this.validator
   }) : super(key: key);
 
   @override
@@ -56,10 +58,11 @@ class _MyTextFieldState extends State<MyTextField> {
           ),
         ],
       ),
-      child: TextField(
+      child: TextFormField(
         controller: widget.controller,
         textCapitalization: widget.textCapitalization,
         keyboardType: widget.inputType,
+        validator: widget.validator,
         maxLines: widget.maxLine,
         minLines: widget.minLine,
         obscureText: _obscureText,
