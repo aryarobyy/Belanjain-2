@@ -84,7 +84,7 @@ class _UserProfileState extends State<UserProfile> {
 
   Future<bool> _showRoleChangeDialog() async {
     final currentRole = widget.userData.role;
-    final newRole = currentRole == 'buyer' ? 'seller' : 'buyer';
+    final newRole = currentRole == 'customer' ? 'seller' : 'customer';
 
     return await showDialog<bool>(
       context: context,
