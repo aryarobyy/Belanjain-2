@@ -3,9 +3,8 @@ enum ProductCategory {
   electronics,
   fashion,
   book,
-  furnitures,
+  furniture,
   sports,
-  books,
   other,
 }
 
@@ -20,14 +19,16 @@ extension ProductCategoryExtension on ProductCategory {
         return "fashion";
       case ProductCategory.book:
         return "book";
-      case ProductCategory.furnitures:
+      case ProductCategory.furniture:
         return "furnitures";
       case ProductCategory.sports:
         return "sports";
+      case ProductCategory.other:
       default:
         return "other";
     }
   }
+
 
   static ProductCategory fromString(String category) {
     switch (category.toLowerCase()) {
@@ -39,10 +40,10 @@ extension ProductCategoryExtension on ProductCategory {
         return ProductCategory.fashion;
       case "book":
         return ProductCategory.book;
-      case "furnitures":
-        return ProductCategory.furnitures;
       case "sports":
         return ProductCategory.sports;
+      case "other":
+        return ProductCategory.other;
       default:
         return ProductCategory.other;
     }

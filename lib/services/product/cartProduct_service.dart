@@ -3,10 +3,13 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:uuid/uuid.dart';
 
 class CartProductService {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseFirestore _firestore;
 
   final String CART_COLLECTION = "carts";
   final String PRODUCT_LIST_COLLECTION = "products";
+
+  CartProductService({FirebaseFirestore? firestore})
+      : _firestore = firestore ?? FirebaseFirestore.instance;
 
   Future<CartProductModel> insertProduct(
       Map<String, dynamic> data,
@@ -14,6 +17,17 @@ class CartProductService {
       String productId,
       ) async {
     try {
+      if (cartId.isEmpty) {
+        throw ArgumentError('Cart ID cannot be empty');
+      }
+      if (productId.isEmpty) {
+        throw ArgumentError('Product ID cannot be empty');
+      }
+      if (data.isEmpty) {
+        throw ArgumentError('Product data cannot be empty');
+      }
+
+      // Get document reference
       DocumentReference newProductRef = _firestore
           .collection(CART_COLLECTION)
           .doc(cartId)
@@ -24,17 +38,57 @@ class CartProductService {
 
       DocumentSnapshot newProductDoc = await newProductRef.get();
 
-      if (newProductDoc.exists) {
-        return CartProductModel.fromMap(
-            newProductDoc.data() as Map<String, dynamic>
-        );
-      }
-      else {
-        print("Product document not found after insertion.");
+      if (newProductDoc.exists && newProductDoc.data() != null) {
+        Map<String, dynamic> docData = newProductDoc.data() as Map<String, dynamic>;
+        return CartProductModel.fromMap(docData);
+      } else {
         throw Exception("Failed to retrieve the inserted product data");
       }
+    } on ArgumentError {
+      rethrow;
+    } on FirebaseException catch (e) {
+      throw Exception("Firestore error: ${e.message}");
     } catch (e) {
-      throw Exception(e);
+      throw Exception("Unexpected error occurred: ${e.toString()}");
+    }
+  }
+
+  Future<void> deleteProduct(String cartId, String productId) async {
+    try {
+      if (cartId.isEmpty || productId.isEmpty) {
+        throw ArgumentError('Cart ID and Product ID cannot be empty');
+      }
+
+      await _firestore
+          .collection(CART_COLLECTION)
+          .doc(cartId)
+          .collection(PRODUCT_LIST_COLLECTION)
+          .doc(productId)
+          .delete();
+    } on ArgumentError {
+      rethrow;
+    } catch (e) {
+      throw Exception("Failed to delete product: ${e.toString()}");
+    }
+  }
+
+  Future<List<CartProductModel>> getCartProducts(String cartId) async {
+    try {
+      if (cartId.isEmpty) {
+        throw ArgumentError('Cart ID cannot be empty');
+      }
+
+      QuerySnapshot querySnapshot = await _firestore
+          .collection(CART_COLLECTION)
+          .doc(cartId)
+          .collection(PRODUCT_LIST_COLLECTION)
+          .get();
+
+      return querySnapshot.docs
+          .map((doc) => CartProductModel.fromMap(doc.data() as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      throw Exception("Failed to get cart products: ${e.toString()}");
     }
   }
 
@@ -102,19 +156,6 @@ class CartProductService {
         throw Exception(e);
       }
     }
-
-  Future<void> deleteProduct(String cartId ,String productId) async {
-    try{
-      await _firestore
-          .collection(CART_COLLECTION)
-          .doc(cartId)
-          .collection(PRODUCT_LIST_COLLECTION)
-          .doc(productId)
-          .delete();
-    } catch (e) {
-      throw Exception(e);
-    }
-  }
 
   Future<void> deleteProducts(String cartId, List<String> productIds) async {
     try {

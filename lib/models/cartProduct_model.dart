@@ -18,9 +18,31 @@ class CartProductModel {
       CartProductId: map['id'] != null ? map['id'] as String : '',
       productId: map['productId'] != null ? map['productId'] as String : '',
       isChecked: map['isChecked'] != null ? map['isChecked'] as bool : false,
-      totalPrice: (map['totalPrice'] as num?)?.toDouble() ?? 0.0,
-      amount: (map['amount'] as num?)?.toInt() ?? 0,
+      totalPrice: _safeToDouble(map['totalPrice']),
+      amount: _safeToInt(map['amount']),
     );
+  }
+
+  static double _safeToDouble(dynamic value) {
+    if (value == null) return 0.0;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is String) {
+      final parsed = double.tryParse(value);
+      return parsed ?? 0.0;
+    }
+    return 0.0;
+  }
+
+  static int _safeToInt(dynamic value) {
+    if (value == null) return 0;
+    if (value is int) return value;
+    if (value is double) return value.toInt();
+    if (value is String) {
+      final parsed = int.tryParse(value);
+      return parsed ?? 0;
+    }
+    return 0;
   }
 
   Map<String, dynamic> toMap() {
